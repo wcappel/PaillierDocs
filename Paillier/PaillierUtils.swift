@@ -64,36 +64,39 @@ struct Utils {
         return s %% b
     }
     
-    @inlinable static func getPrimeOver(_ N: UInt64) -> BInt {
-        var n = BInt(UInt64.random(in: 2^(N-1)...2^N) | 1)
+    @inlinable static func getPrimeOver(_ N: Int) -> BInt {
+        var n = BInt(UInt64.random(in: UInt64(2**(N-1))...UInt64(2**N)) | 1)
+        
         while !isPrime(n) {
             n += 2
         }
         return n
     }
-    
-    static func iSqrt(_ n: BInt) -> BInt {
-        assert(n >= 0)
-        if n == 0 {
-            return 0
-        }
-        var i: BInt = BInt(n.bitWidth) >> 1
-        var m: BInt = 1 << i
-        while (m << i) > n {
-            m >>= 1
-            i -= 1
-        }
-        var d = n - (m << i)
-        for k in (0...(i-1)).reversed() {
-            let j: BInt = 1 << k
-            let new_diff = d - (((m<<1) | j) << k)
-            if new_diff >= 0 {
-                d = new_diff
-                m |= j
-            }
-        }
-        return m
-    }
+
+
+// Don't need this?
+//    static func iSqrt(_ n) -> ? {
+//        assert(n >= 0)
+//        if n == 0 {
+//            return 0
+//        }
+//        var i = n.bitWidth >> 1
+//        var m = 1 << i
+//        while (m << i) > n {
+//            m >>= 1
+//            i -= 1
+//        }
+//        var d = n - (m << i)
+//        for k in (0...(i-1)).reversed() {
+//            let j = 1 << k
+//            let new_diff = d - (((m<<1) | j) << k)
+//            if new_diff >= 0 {
+//                d = new_diff
+//                m |= j
+//            }
+//        }
+//        return m
+//    }
     
     static func millerRabin(n: BInt, k: Int) -> Bool {
         assert(n > 3)
@@ -103,6 +106,8 @@ struct Utils {
             d /= 2
             r += 1
         }
+        print("r: \(r)")
+        assert(n-1 == d * 2**r)
         assert(d % 2 == 1)
 
         for _ in 0...k-1 {
@@ -114,11 +119,13 @@ struct Utils {
             }
             
             var cond = false
-            for _ in 1...r-1 {
-                x = (x*x) %% n
-                if x == n-1 {
-                    cond = true
-                    break
+            if r-1 >= 1 {
+                for _ in 1...r-1 {
+                    x = (x*x) %% n
+                    if x == n-1 {
+                        cond = true
+                        break
+                    }
                 }
             }
             
@@ -130,10 +137,8 @@ struct Utils {
     }
     
     static func isPrime(_ n: BInt, mrRounds: Int = 25) -> Bool {
-        if n <= FIRST_PRIMES[-1] {
-            if FIRST_PRIMES.contains(n) {
-                return true
-            }
+        if n <= FIRST_PRIMES.last! {
+            return FIRST_PRIMES.contains(n)
         }
         for p in FIRST_PRIMES {
             if (n %% p) == 0 {
