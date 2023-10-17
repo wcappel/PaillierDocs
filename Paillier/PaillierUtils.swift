@@ -1,6 +1,5 @@
 //
 //  PaillierUtils.swift
-//  PaillierSwift
 //
 //  This is essentially a Swift
 //  adaptation/copy of the python-paillier
