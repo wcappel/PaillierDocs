@@ -41,8 +41,8 @@ struct PaillierScheme {
     
     struct EncryptedNumber {
         let publicKey: PublicKey
-        private let ciphertext: BInt
-        private var isObfuscated: Bool
+        private(set) var ciphertext: BInt
+        private(set) var isObfuscated: Bool
         
         public init(publicKey: PublicKey, ciphertext: BInt) {
             self.publicKey = publicKey
@@ -50,16 +50,11 @@ struct PaillierScheme {
             self.isObfuscated = false
         }
         
-        public func obfuscate() {
-            // TO-DO
-        }
-        
-        public func ciphertext(secure: Bool) -> BInt {
-            if secure && !self.isObfuscated {
-                self.obfuscate()
-            }
-            
-            return self.ciphertext
+        public mutating func obfuscate() {
+            let r = self.publicKey.getRandomLtN()
+            let rPowN = Utils.powMod(r, self.publicKey.n, self.publicKey.nSquare)
+            self.ciphertext = Utils.mulMod(self.ciphertext, rPowN, self.publicKey.nSquare)
+            self.isObfuscated = true
         }
         
         private func rawAdd(c1: BInt, c2: BInt) -> BInt {
@@ -74,8 +69,8 @@ struct PaillierScheme {
             let (a, b) = (self, other)
             
             let sum = a.rawAdd(
-                c1: a.ciphertext(secure: false),
-                c2: b.ciphertext(secure: false)
+                c1: a.ciphertext,
+                c2: b.ciphertext
             )
             
             return EncryptedNumber(publicKey: a.publicKey, ciphertext: sum)
@@ -111,7 +106,7 @@ struct PaillierScheme {
             )
         }
         
-        private func getRandomLtN() -> BInt {
+        func getRandomLtN() -> BInt {
             let range = self.n <= UInt64.max ? 1...UInt64.max : 1...UInt64(self.n)
             return BInt(UInt64.random(in: range))
         }
@@ -183,7 +178,7 @@ struct PaillierScheme {
                 throw PaillierSchemeError.DifferentPublicKeys
             }
             
-            return self.rawDecrypt(ciphertext: encryptedNumber.ciphertext(secure: false))
+            return self.rawDecrypt(ciphertext: encryptedNumber.ciphertext)
         }
         
         static func hFunc(_ x: BInt, _ xsquare: BInt, publicKey: PublicKey) throws -> BInt {
