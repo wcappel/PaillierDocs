@@ -14,6 +14,31 @@ import BigNumber
 struct PaillierScheme {
     static let DEFAULT_KEYSIZE = 3072
     
+    public static func generatePaillierKeypair(nLength: Int = DEFAULT_KEYSIZE)
+    throws -> (PublicKey, PrivateKey) {
+        var nLen = 0
+        var n: BInt = 0
+        
+        while nLen != nLength {
+            let p = Utils.getPrimeOver(nLength / 2)
+            var q = p
+            while q == p {
+                q = Utils.getPrimeOver(nLength / 2)
+            }
+            n = p * q
+            nLen = n.bitWidth
+        }
+        
+        let publicKey = PublicKey(n: n)
+        let privateKey = try? PrivateKey(publicKey: publicKey, p: p, q: q)
+        
+        guard let privateKey else {
+            throw PaillierSchemeError.InvalidKeySize
+        }
+        
+        return (publicKey, privateKey)
+    }
+    
     struct EncryptedNumber {
         let publicKey: PublicKey
         private let ciphertext: BInt
@@ -48,7 +73,11 @@ struct PaillierScheme {
             
             let (a, b) = (self, other)
             
-            let sum = a.rawAdd(c1: a.ciphertext(secure: false), c2: b.ciphertext(secure: false))
+            let sum = a.rawAdd(
+                c1: a.ciphertext(secure: false),
+                c2: b.ciphertext(secure: false)
+            )
+            
             return EncryptedNumber(publicKey: a.publicKey, ciphertext: sum)
         }
     }
@@ -76,7 +105,10 @@ struct PaillierScheme {
         }
         
         public func encrypt(plaintext: BInt) -> EncryptedNumber {
-            return EncryptedNumber(publicKey: self, ciphertext: self.rawEncrypt(plaintext: plaintext))
+            return EncryptedNumber(
+                publicKey: self,
+                ciphertext: self.rawEncrypt(plaintext: plaintext)
+            )
         }
         
         private func getRandomLtN() -> BInt {
@@ -117,8 +149,18 @@ struct PaillierScheme {
             self.pSquare = self.p * self.p
             self.qSquare = self.q * self.q
             self.pInverse = try Utils.invert(self.p, self.q)
-            self.hp = try PaillierScheme.PrivateKey.hFunc(self.p, self.pSquare, publicKey: self.publicKey)
-            self.hq = try PaillierScheme.PrivateKey.hFunc(self.q, self.qSquare, publicKey: self.publicKey)
+            
+            self.hp = try PaillierScheme.PrivateKey.hFunc(
+                self.p,
+                self.pSquare,
+                publicKey: self.publicKey
+            )
+            
+            self.hq = try PaillierScheme.PrivateKey.hFunc(
+                self.q,
+                self.qSquare,
+                publicKey: self.publicKey
+            )
         }
         
         private func rawDecrypt(ciphertext: BInt) -> BInt {
@@ -156,8 +198,6 @@ struct PaillierScheme {
             let u = Utils.mulMod(mq - mp, self.pInverse, self.q)
             return mp + (u * self.p)
         }
-        
-        
     }
 }
 
@@ -165,4 +205,5 @@ enum PaillierSchemeError: Error {
     case InvalidPublicKey
     case pqValuesSame
     case DifferentPublicKeys
+    case InvalidKeySize
 }
