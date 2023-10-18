@@ -10,9 +10,8 @@ let package = Package(
         .macOS(.v12),
     ],
     dependencies: [
-//        .package(url: "https://github.com/code28/SwiftPaillier.git", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-collections.git", from: "1.0.0"),
-        .package(url: "https://github.com/mkrd/Swift-BigInt.git", from: "2.0.0")
+        .package(url: "https://github.com/wcappel/BignumGMP", branch: "master")
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -20,9 +19,8 @@ let package = Package(
         .executableTarget(
             name: name,
             dependencies: [
-                /*.product(name: "SwiftPaillier", package: "SwiftPaillier"),*/
                 .product(name: "Collections", package: "swift-collections"),
-                .product(name: "BigNumber", package: "Swift-BigInt")
+                .product(name: "Bignum", package: "BignumGMP")
             ],
             path: ""
         )

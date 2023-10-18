@@ -1,12 +1,12 @@
 {
   "pins" : [
     {
-      "identity" : "swift-bigint",
+      "identity" : "bignumgmp",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mkrd/Swift-BigInt.git",
+      "location" : "https://github.com/wcappel/BignumGMP",
       "state" : {
-        "revision" : "b07e961f4c999671cf8c2dc80e740899e8946013",
-        "version" : "2.3.0"
+        "branch" : "master",
+        "revision" : "5122c0d6f747bc5b5948a02d509450c3b71ce483"
       }
     },
     {

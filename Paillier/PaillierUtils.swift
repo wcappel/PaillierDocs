@@ -6,46 +6,30 @@
 //  library at: https://github.com/data61/python-paillier
 //  Will eventually add their notice/license as I've
 //  just translated their code into a different language
-//  with Swift-BigInt for handling nums
+//  with the Bignum GMP wrapper for handling nums
 
 import Foundation
-import BigNumber
+import Bignum
+import CGMP
 
 infix operator %%
 // Swift's % is not true modulo
-public func %%(lhs: BInt, rhs: BInt) -> BInt {
+public func %%(lhs: BigInt, rhs: BigInt) -> BigInt {
     assert(rhs > 0)
     let r = lhs % rhs
+    
     return r >= 0 ? r : r + rhs
 }
 
 struct Utils {
-    @inlinable static func powMod(_ a: BInt, _ b: BInt, _ c: BInt) -> BInt {
-        if a == 1 {
-            return 1
-        } else {
-            var result: BInt = 1
-            var aa = a
-            var bb = b
-            while bb > 0 {
-                if ((bb & 1) != 0) {
-                    result = (result * aa) %% c
-                }
-                aa = (aa * aa) %% c
-                bb >>= 1
-            }
-            return result
-        }
-    }
-    
-    @inlinable static func mulMod(_ a: BInt, _ b: BInt, _ c: BInt) -> BInt {
+    @inlinable static func mulMod(_ a: BigInt, _ b: BigInt, _ c: BigInt) -> BigInt {
         return (a * b) %% c
     }
     
-    static func extendedEuclideanAlg(_ a: BInt, _ b: BInt) -> (BInt, BInt, BInt) {
-        var (r0, r1): (BInt, BInt) = (a, b)
-        var (s0, s1): (BInt, BInt) = (1, 0)
-        var (t0, t1): (BInt, BInt) = (0, 1)
+    static func extendedEuclideanAlg(_ a: BigInt, _ b: BigInt) -> (BigInt, BigInt, BigInt) {
+        var (r0, r1): (BigInt, BigInt) = (a, b)
+        var (s0, s1): (BigInt, BigInt) = (1, 0)
+        var (t0, t1): (BigInt, BigInt) = (0, 1)
         while r1 != 0 {
             let q = r0 / r1 // floor division
             (r0, r1) = (r1, r0 - q*r1)
@@ -55,99 +39,15 @@ struct Utils {
         return (r0, s0, t0)
     }
     
-    @inlinable static func invert(_ a: BInt, _ b: BInt) throws -> BInt {
-        let (r, s, _) = extendedEuclideanAlg(a, b)
-        if r != 1 {
-            throw PaillierUtilsError.ZeroDivisionError
-        }
-        return s %% b
+    @inlinable static func getPrimeOver(_ N: UInt) -> BigInt {
+        print("Getting prime over \(N)")
+        var n: BigInt = BigInt.randomInt(bits: N)
+        let res = BigInt.nextPrime(n)
+        print(res)
+        return res
     }
     
-    @inlinable static func getPrimeOver(_ N: Int) -> BInt {
-        var n = BInt(UInt64.random(in: UInt64(2**(N-1))...UInt64(2**N)) | 1)
-        
-        while !isPrime(n) {
-            n += 2
-        }
-        return n
-    }
-
-
-// Don't need this?
-//    static func iSqrt(_ n) -> ? {
-//        assert(n >= 0)
-//        if n == 0 {
-//            return 0
-//        }
-//        var i = n.bitWidth >> 1
-//        var m = 1 << i
-//        while (m << i) > n {
-//            m >>= 1
-//            i -= 1
-//        }
-//        var d = n - (m << i)
-//        for k in (0...(i-1)).reversed() {
-//            let j = 1 << k
-//            let new_diff = d - (((m<<1) | j) << k)
-//            if new_diff >= 0 {
-//                d = new_diff
-//                m |= j
-//            }
-//        }
-//        return m
-//    }
-    
-    static func millerRabin(n: BInt, k: Int) -> Bool {
-        assert(n > 3)
-        var d: BInt = n-1
-        var r = 0
-        while (d %% 2) == 0 {
-            d /= 2
-            r += 1
-        }
-        print("r: \(r)")
-        assert(n-1 == d * 2**r)
-        assert(d % 2 == 1)
-
-        for _ in 0...k-1 {
-            let a = BInt(UInt64.random(in: 2...UInt64(n-2)))
-
-            var x = powMod(a, d, n)
-            if x == 1 || x == n-1 {
-                continue
-            }
-            
-            var cond = false
-            if r-1 >= 1 {
-                for _ in 1...r-1 {
-                    x = (x*x) %% n
-                    if x == n-1 {
-                        cond = true
-                        break
-                    }
-                }
-            }
-            
-            if !cond {
-                return false
-            }
-        }
-        return true
-    }
-    
-    static func isPrime(_ n: BInt, mrRounds: Int = 25) -> Bool {
-        if n <= FIRST_PRIMES.last! {
-            return FIRST_PRIMES.contains(n)
-        }
-        for p in FIRST_PRIMES {
-            if (n %% p) == 0 {
-                return false
-            }
-        }
-        return millerRabin(n: n, k: mrRounds)
-    }
-    
-    static let FIRST_PRIMES: [BInt] = [
+    static let FIRST_PRIMES: [BigInt] = [
         2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71,
         73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151,
         157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233,

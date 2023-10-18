@@ -6,30 +6,33 @@
 //  library at: https://github.com/data61/python-paillier
 //  Will eventually add their notice/license as I've
 //  just translated their code into a different language
-//  with Swift-BigInt for handling nums
+//  with the Bignum GMP wrapper for handling nums
 
 import Foundation
-import BigNumber
+import Bignum
 
 struct PaillierScheme {
-    static let DEFAULT_KEYSIZE = 3072
+    static let DEFAULT_KEYSIZE: UInt = 3072
     
-    public static func generatePaillierKeypair(nLength: Int = DEFAULT_KEYSIZE)
+    public static func generatePaillierKeypair(nLength: UInt = DEFAULT_KEYSIZE)
     throws -> (PublicKey, PrivateKey) {
         var nLen = 0
-        var n: BInt = 0
+        var n: BigInt = 0
+        var q: BigInt = 0
+        var p: BigInt = 0
         
         while nLen != nLength {
-            let p = Utils.getPrimeOver(nLength / 2)
-            var q = p
+            p = Utils.getPrimeOver(nLength / 2)
+            q = p
             while q == p {
                 q = Utils.getPrimeOver(nLength / 2)
             }
             n = p * q
-            nLen = n.bitWidth
+            nLen = n.bitSize()
         }
         
         let publicKey = PublicKey(n: n)
+        print("Created public key")
         let privateKey = try? PrivateKey(publicKey: publicKey, p: p, q: q)
         
         guard let privateKey else {
@@ -41,23 +44,23 @@ struct PaillierScheme {
     
     struct EncryptedNumber {
         let publicKey: PublicKey
-        private(set) var ciphertext: BInt
+        private(set) var ciphertext: BigInt
         private(set) var isObfuscated: Bool
         
-        public init(publicKey: PublicKey, ciphertext: BInt) {
+        public init(publicKey: PublicKey, ciphertext: BigInt) {
             self.publicKey = publicKey
             self.ciphertext = ciphertext
             self.isObfuscated = false
         }
         
         public mutating func obfuscate() {
-            let r = self.publicKey.getRandomLtN()
-            let rPowN = Utils.powMod(r, self.publicKey.n, self.publicKey.nSquare)
+            let r = self.publicKey.getRandomNumLessThanN()
+            let rPowN = mod_exp(r, self.publicKey.n, self.publicKey.nSquare)
             self.ciphertext = Utils.mulMod(self.ciphertext, rPowN, self.publicKey.nSquare)
             self.isObfuscated = true
         }
         
-        private func rawAdd(c1: BInt, c2: BInt) -> BInt {
+        private func rawAdd(c1: BigInt, c2: BigInt) -> BigInt {
             return Utils.mulMod(c1, c2, self.publicKey.nSquare)
         }
         
@@ -78,51 +81,50 @@ struct PaillierScheme {
     }
     
     struct PublicKey: Equatable {
-        let g: BInt
-        let n: BInt
-        let nSquare: BInt
-        let maxInt: BInt
+        let g: BigInt
+        let n: BigInt
+        let nSquare: BigInt
+        let maxInt: BigInt
         
-        init(n: BInt) {
+        init(n: BigInt) {
             self.g = n + 1
             self.n = n
             self.nSquare = n * n
             self.maxInt = n / 3 - 1
         }
         
-        private func rawEncrypt(plaintext: BInt) -> BInt {
+        private func rawEncrypt(plaintext: BigInt) -> BigInt {
             let nudeCiphertext = (self.n * plaintext + 1) %% self.nSquare
             
-            let r = self.getRandomLtN()
-            let obfuscator = Utils.powMod(r, self.n, self.nSquare)
+            let r = self.getRandomNumLessThanN()
+            let obfuscator = mod_exp(r, self.n, self.nSquare)
             
             return Utils.mulMod(nudeCiphertext, obfuscator, self.nSquare)
         }
         
-        public func encrypt(plaintext: BInt) -> EncryptedNumber {
+        public func encrypt(plaintext: BigInt) -> EncryptedNumber {
             return EncryptedNumber(
                 publicKey: self,
                 ciphertext: self.rawEncrypt(plaintext: plaintext)
             )
         }
         
-        func getRandomLtN() -> BInt {
-            let range = self.n <= UInt64.max ? 1...UInt64.max : 1...UInt64(self.n)
-            return BInt(UInt64.random(in: range))
+        func getRandomNumLessThanN() -> BigInt {
+            return BigInt.randomInt(limit: self.n)
         }
     }
     
     struct PrivateKey {
         public let publicKey: PublicKey
-        let p: BInt
-        let q: BInt
-        let pSquare: BInt
-        let qSquare: BInt
-        let pInverse: BInt
-        let hp: BInt
-        let hq: BInt
+        let p: BigInt
+        let q: BigInt
+        let pSquare: BigInt
+        let qSquare: BigInt
+        let pInverse: BigInt
+        let hp: BigInt
+        let hq: BigInt
         
-        init(publicKey: PublicKey, p: BInt, q: BInt) throws {
+        init(publicKey: PublicKey, p: BigInt, q: BigInt) throws {
             if publicKey.n != p * q {
                 throw PaillierSchemeError.InvalidPublicKey
             }
@@ -143,7 +145,7 @@ struct PaillierScheme {
             
             self.pSquare = self.p * self.p
             self.qSquare = self.q * self.q
-            self.pInverse = try Utils.invert(self.p, self.q)
+            self.pInverse = inverse(self.p, self.q)!
             
             self.hp = try PaillierScheme.PrivateKey.hFunc(
                 self.p,
@@ -156,16 +158,17 @@ struct PaillierScheme {
                 self.qSquare,
                 publicKey: self.publicKey
             )
+            print("Created private key")
         }
         
-        private func rawDecrypt(ciphertext: BInt) -> BInt {
+        private func rawDecrypt(ciphertext: BigInt) -> BigInt {
             let decryptToP = Utils.mulMod(
-                PrivateKey.lFunc(Utils.powMod(ciphertext, self.p - 1, self.pSquare), self.p),
+                PrivateKey.lFunc(mod_exp(ciphertext, self.p - 1, self.pSquare), self.p),
                 self.hp,
                 self.p
             )
             let decryptToQ = Utils.mulMod(
-                PrivateKey.lFunc(Utils.powMod(ciphertext, self.q - 1, self.qSquare), self.q),
+                PrivateKey.lFunc(mod_exp(ciphertext, self.q - 1, self.qSquare), self.q),
                 self.hq,
                 self.q
             )
@@ -173,7 +176,7 @@ struct PaillierScheme {
             return self.crt(mp: decryptToP, mq: decryptToQ)
         }
         
-        public func decrypt(encryptedNumber: EncryptedNumber) throws -> BInt {
+        public func decrypt(encryptedNumber: EncryptedNumber) throws -> BigInt {
             guard self.publicKey == encryptedNumber.publicKey else {
                 throw PaillierSchemeError.DifferentPublicKeys
             }
@@ -181,15 +184,15 @@ struct PaillierScheme {
             return self.rawDecrypt(ciphertext: encryptedNumber.ciphertext)
         }
         
-        static func hFunc(_ x: BInt, _ xsquare: BInt, publicKey: PublicKey) throws -> BInt {
-            return try Utils.invert(self.lFunc(Utils.powMod(publicKey.g, x - 1, xsquare),x), x)
+        static func hFunc(_ x: BigInt, _ xsquare: BigInt, publicKey: PublicKey) throws -> BigInt {
+            return inverse(self.lFunc(mod_exp(publicKey.g, x - 1, xsquare),x), x)!
         }
 
-        static func lFunc(_ x: BInt, _ p: BInt) -> BInt {
+        static func lFunc(_ x: BigInt, _ p: BigInt) -> BigInt {
             return (x - 1) / p
         }
         
-        func crt(mp: BInt, mq: BInt) -> BInt {
+        func crt(mp: BigInt, mq: BigInt) -> BigInt {
             let u = Utils.mulMod(mq - mp, self.pInverse, self.q)
             return mp + (u * self.p)
         }
