@@ -3,9 +3,21 @@
 // Currently used for testing
 
 import Foundation
+import Bignum
 
 print("Started")
 let (pubKey, privKey): (PaillierScheme.PublicKey, PaillierScheme.PrivateKey) = try! PaillierScheme.generatePaillierKeypair()
+let myVal: BigInt = 250
+let myEncryptedVal = pubKey.encrypt(plaintext: myVal)
+let myAddend: BigInt = 50
+let myEncryptedAddend = pubKey.encrypt(plaintext: myAddend)
+let myEncryptedResult = try! myEncryptedVal.add(other: myEncryptedAddend)
+let myDecryptedResult = try! privKey.decrypt(encryptedNumber: myEncryptedResult)
+print(myDecryptedResult)
+
+
+
+
 print("Done")
 
 //print("Running tests...")
