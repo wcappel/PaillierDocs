@@ -176,6 +176,21 @@ public struct SinglyLinkedList<T> {
     }
 }
 
+public protocol DefinedAdditiveOperation {
+    static func +(lhs: Self, rhs: Self) throws -> Self
+}
+
+extension SinglyLinkedList where T: DefinedAdditiveOperation {
+    public func addAtIndex(addend: T, index: Int) throws -> T {
+        guard var nodeAtIndex = self.nodeAt(index) else {
+            throw LinkedListError.IndexOutOfRange
+        }
+        
+        nodeAtIndex.value = try nodeAtIndex.value + addend
+        return nodeAtIndex.value
+    }
+}
+
 enum LinkedListError: Error {
     case IndexOutOfRange
     case EmptyList

@@ -42,7 +42,7 @@ struct PaillierScheme {
         return (publicKey, privateKey)
     }
     
-    struct EncryptedNumber {
+    struct EncryptedNumber: DefinedAdditiveOperation {
         let publicKey: PublicKey
         private(set) var ciphertext: BigInt
         private(set) var isObfuscated: Bool
