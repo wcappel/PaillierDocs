@@ -1,5 +1,5 @@
 //
-//  Paillier.swift
+//  PaillierScheme.swift
 //
 //  This is essentially a Swift
 //  adaptation/copy of the python-paillier
@@ -78,6 +78,12 @@ struct PaillierScheme {
             
             return EncryptedNumber(publicKey: a.publicKey, ciphertext: sum)
         }
+        
+        static func +(lhs: PaillierScheme.EncryptedNumber, rhs: PaillierScheme.EncryptedNumber)
+        throws -> PaillierScheme.EncryptedNumber {
+            return try lhs.add(other: rhs)
+        }
+
     }
     
     struct PublicKey: Equatable {

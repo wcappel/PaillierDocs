@@ -10,7 +10,6 @@
 
 import Foundation
 import Bignum
-import CGMP
 
 infix operator %%
 // Swift's % is not true modulo
