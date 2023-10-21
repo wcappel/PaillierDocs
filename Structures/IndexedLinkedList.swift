@@ -11,7 +11,7 @@ final private class IndexedNode<T> {
     var value: T
     var nextIndex: T
     
-    init(value: T, index: T, nextIndex: T) {
+    init(value: T, nextIndex: T) {
         self.value = value
         self.nextIndex = nextIndex
     }
@@ -20,7 +20,7 @@ final private class IndexedNode<T> {
 public struct IndexedLinkedList<T> {
     let INITALIZED_NUM_OF_ENTRIES: Int = 100
     private var entries: [IndexedNode<T>?]
-    private var numOfEdits: Int
+    private(set) var numOfEdits: Int
     
     public init() {
         self.entries = []
@@ -38,8 +38,8 @@ public struct IndexedLinkedList<T> {
         }
     }
     
-    public mutating func addEntry(value: T, index: T, nextIndex: T) {
-        let newEntry = IndexedNode(value: value, index: index, nextIndex: nextIndex)
+    public mutating func addEntry(value: T, nextIndex: T) {
+        let newEntry = IndexedNode(value: value, nextIndex: nextIndex)
         
         for i in 0...self.entries.count - 1 {
             if self.entries[i] == nil {
