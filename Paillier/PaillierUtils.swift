@@ -26,7 +26,7 @@ struct Utils {
     }
     
     @inlinable static func getPrimeOver(_ N: UInt) -> BigInt {
-        var n: BigInt = BigInt.randomInt(bits: N)
+        let n: BigInt = BigInt.randomInt(bits: N)
         let res = BigInt.nextPrime(n)
         return res
     }

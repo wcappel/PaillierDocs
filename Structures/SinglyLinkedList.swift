@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class SinglyLinkedNode<T> {
+final private class SinglyLinkedNode<T> {
     var value: T
     var next: SinglyLinkedNode<T>?
     
@@ -18,11 +18,11 @@ public class SinglyLinkedNode<T> {
 }
 
 public struct SinglyLinkedList<T> {
-    private(set) var head: SinglyLinkedNode<T>?
-    private(set) var tail: SinglyLinkedNode<T>?
+    private var head: SinglyLinkedNode<T>?
+    private var tail: SinglyLinkedNode<T>?
     private(set) var size: Int
     
-    init() {
+    public init() {
         self.size = 0
         self.head = nil
         self.tail = nil
@@ -82,6 +82,22 @@ public struct SinglyLinkedList<T> {
         }
         
         return result.value
+    }
+    
+    public func first() throws -> T {
+        guard let head = self.head else {
+            throw LinkedListError.EmptyList
+        }
+        
+        return head.value
+    }
+    
+    public func last() throws -> T {
+        guard let tail = self.tail else {
+            throw LinkedListError.EmptyList
+        }
+        
+        return tail.value
     }
     
     public mutating func insertAfter(_ value: T, index: Int) throws {
@@ -182,7 +198,7 @@ public protocol DefinedAdditiveOperation {
 
 extension SinglyLinkedList where T: DefinedAdditiveOperation {
     public func addAtIndex(addend: T, index: Int) throws -> T {
-        guard var nodeAtIndex = self.nodeAt(index) else {
+        guard let nodeAtIndex = self.nodeAt(index) else {
             throw LinkedListError.IndexOutOfRange
         }
         
