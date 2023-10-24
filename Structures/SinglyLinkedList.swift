@@ -103,6 +103,12 @@ public struct SinglyLinkedList<T> {
     public mutating func insertAfter(_ value: T, index: Int) throws {
         let newNode: SinglyLinkedNode<T> = SinglyLinkedNode(value: value)
         
+        if self.head == nil && index == 0 {
+            self.append(value)
+            return
+        }
+        
+        
         guard let nodeAtIndex = nodeAt(index) else {
             throw LinkedListError.IndexOutOfRange
         }
