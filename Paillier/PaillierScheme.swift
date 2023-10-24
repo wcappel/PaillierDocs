@@ -11,8 +11,8 @@
 import Foundation
 import Bignum
 
-struct PaillierScheme {
-    static let DEFAULT_KEYSIZE: UInt = 3072
+public struct PaillierScheme {
+    public static let DEFAULT_KEYSIZE: UInt = 3072
     
     public static func generatePaillierKeypair(nLength: UInt = DEFAULT_KEYSIZE)
     throws -> (PublicKey, PrivateKey) {
@@ -42,7 +42,7 @@ struct PaillierScheme {
         return (publicKey, privateKey)
     }
     
-    struct EncryptedNumber: DefinedAdditiveOperation {
+    public struct EncryptedNumber: DefinedAdditiveOperation {
         let publicKey: PublicKey
         private(set) var ciphertext: BigInt
         private(set) var isObfuscated: Bool
@@ -79,14 +79,14 @@ struct PaillierScheme {
             return EncryptedNumber(publicKey: a.publicKey, ciphertext: sum)
         }
         
-        static func +(lhs: PaillierScheme.EncryptedNumber, rhs: PaillierScheme.EncryptedNumber)
+        @inlinable public static func +(lhs: PaillierScheme.EncryptedNumber, rhs: PaillierScheme.EncryptedNumber)
         throws -> PaillierScheme.EncryptedNumber {
             return try lhs.add(other: rhs)
         }
 
     }
     
-    struct PublicKey: Equatable {
+    public struct PublicKey: Equatable {
         let g: BigInt
         let n: BigInt
         let nSquare: BigInt
@@ -120,7 +120,7 @@ struct PaillierScheme {
         }
     }
     
-    struct PrivateKey {
+    public struct PrivateKey {
         public let publicKey: PublicKey
         let p: BigInt
         let q: BigInt

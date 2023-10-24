@@ -18,15 +18,19 @@ final private class IndexedNode<T> {
 }
 
 public struct IndexedLinkedList<T> {
-    let INITALIZED_NUM_OF_ENTRIES: Int = 100
+    let INITIALIZED_NUM_OF_ENTRIES: Int = 100
     private var entries: [IndexedNode<T>?]
+    // Put revision # in actor/object handling operational transforms
     private(set) var numOfEdits: Int
+    
+    // How will a user know where the head is?
+    // Could we just use a property to track it?
     
     public init() {
         self.entries = []
         self.numOfEdits = 0
         
-        for _ in 0...INITALIZED_NUM_OF_ENTRIES - 1 {
+        for _ in 0...INITIALIZED_NUM_OF_ENTRIES - 1 {
             addToArrayInOut(nil, array: &self.entries)
         }
     }
@@ -41,6 +45,10 @@ public struct IndexedLinkedList<T> {
     public mutating func addEntry(value: T, nextIndex: T) {
         let newEntry = IndexedNode(value: value, nextIndex: nextIndex)
         
+        defer {
+            self.numOfEdits += 1
+        }
+        
         for i in 0...self.entries.count - 1 {
             if self.entries[i] == nil {
                 self.entries[i] = newEntry
@@ -50,7 +58,20 @@ public struct IndexedLinkedList<T> {
         
         self.doubleResize()
         self.entries[self.entries.count / 2] = newEntry
+    }
+    
+    public mutating func addEntryAt(value: T, nextIndex: T, at entryIndex: Int) throws {
+        let newEntry = IndexedNode(value: value, nextIndex: nextIndex)
         
+        guard entryIndex < self.entries.count else {
+            throw LinkedListError.IndexOutOfRange
+        }
+        
+        guard self.entries[entryIndex] == nil else {
+            throw IndexedLLError.EntryIndexAlreadyOccupied
+        }
+        
+        self.entries[entryIndex] = newEntry
         self.numOfEdits += 1
     }
     
@@ -62,6 +83,16 @@ public struct IndexedLinkedList<T> {
         self.entries[entryIndex] = nil
         
         self.numOfEdits += 1
+    }
+    
+    public func asTuples() -> [(T, T)?] {
+        return self.entries.map { entry -> (T, T)? in
+            if entry != nil {
+                return (entry!.value, entry!.nextIndex)
+            }
+            
+            return nil
+        }
     }
 }
 
@@ -85,4 +116,7 @@ public func addToArrayInOut<T: Any>(_ value: T, array: inout [T]) {
     array.append(value)
 }
 
+public enum IndexedLLError: Error {
+    case EntryIndexAlreadyOccupied
+}
 

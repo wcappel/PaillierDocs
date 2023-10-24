@@ -103,7 +103,7 @@ public struct SinglyLinkedList<T> {
     public mutating func insertAfter(_ value: T, index: Int) throws {
         let newNode: SinglyLinkedNode<T> = SinglyLinkedNode(value: value)
         
-        guard var nodeAtIndex = nodeAt(index) else {
+        guard let nodeAtIndex = nodeAt(index) else {
             throw LinkedListError.IndexOutOfRange
         }
         
@@ -189,6 +189,18 @@ public struct SinglyLinkedList<T> {
         }
         
         print("<Empty>")
+    }
+    
+    public func asArray() -> [T] {
+        var result: [T] = []
+        if var currNode = self.head {
+            result.append(currNode.value)
+            while currNode.next != nil {
+                result.append(currNode.next!.value)
+                currNode = currNode.next!
+            }
+        }
+        return result
     }
 }
 
