@@ -8,20 +8,20 @@
 import Foundation
 import Bignum
 
-public enum OperationType {
+public enum SLLOperationType {
     case INSERT_NEW_NODE
     case ADDITION_ON_NODE_VALUE
     case REMOVE_NODE
 }
 
-public struct Operation {
-    let operationType: OperationType
+public struct SLLOperation {
+    let operationType: SLLOperationType
     var targetIndex: Int
     let localRevisionNum: Int
     let encryptedOperand: PaillierScheme.EncryptedNumber?
     var ignore: Bool
     
-    init(operationType: OperationType, targetIndex: Int, localRevisionNum: Int, encryptedOperand: PaillierScheme.EncryptedNumber?) {
+    init(operationType: SLLOperationType, targetIndex: Int, localRevisionNum: Int, encryptedOperand: PaillierScheme.EncryptedNumber?) {
         self.operationType = operationType
         self.targetIndex = targetIndex
         self.localRevisionNum = localRevisionNum
@@ -30,11 +30,11 @@ public struct Operation {
     }
 }
 
-final actor EncryptedDocument {
+final actor SLLEncryptedDocument {
     private let publicKey: PaillierScheme.PublicKey
     private var textStructure: SinglyLinkedList<PaillierScheme.EncryptedNumber>
     private var revisionNum: Int
-    private var operationHistory: [Operation]
+    private var operationHistory: [SLLOperation]
     
     init(publicKey: PaillierScheme.PublicKey) {
         self.publicKey = publicKey
@@ -43,7 +43,7 @@ final actor EncryptedDocument {
         self.operationHistory = []
     }
     
-    private func transformOperation(operation: Operation) -> Operation {
+    private func transformOperation(operation: SLLOperation) -> SLLOperation {
         if operation.localRevisionNum == self.revisionNum {
             return operation
         }
@@ -77,7 +77,7 @@ final actor EncryptedDocument {
         return transformedOperation
     }
     
-    public func handleOperation(operation: Operation) throws {
+    public func handleOperation(operation: SLLOperation) throws {
         
         let transformed = transformOperation(operation: operation)
         

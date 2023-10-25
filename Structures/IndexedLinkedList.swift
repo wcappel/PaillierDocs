@@ -20,15 +20,14 @@ final private class IndexedNode<T> {
 public struct IndexedLinkedList<T> {
     let INITIALIZED_NUM_OF_ENTRIES: Int = 100
     private var entries: [IndexedNode<T>?]
-    // Put revision # in actor/object handling operational transforms
-    private(set) var numOfEdits: Int
+    private var headIndex: T?
     
     // How will a user know where the head is?
     // Could we just use a property to track it?
     
     public init() {
         self.entries = []
-        self.numOfEdits = 0
+        self.headIndex = nil
         
         for _ in 0...INITIALIZED_NUM_OF_ENTRIES - 1 {
             addToArrayInOut(nil, array: &self.entries)
@@ -44,10 +43,6 @@ public struct IndexedLinkedList<T> {
     
     public mutating func addEntry(value: T, nextIndex: T) {
         let newEntry = IndexedNode(value: value, nextIndex: nextIndex)
-        
-        defer {
-            self.numOfEdits += 1
-        }
         
         for i in 0...self.entries.count - 1 {
             if self.entries[i] == nil {
@@ -72,7 +67,10 @@ public struct IndexedLinkedList<T> {
         }
         
         self.entries[entryIndex] = newEntry
-        self.numOfEdits += 1
+    }
+    
+    public mutating func changeHeadIndex(newHeadIndex: T) {
+        self.headIndex = newHeadIndex
     }
     
     public mutating func removeEntry(at entryIndex: Int) throws {
@@ -81,8 +79,6 @@ public struct IndexedLinkedList<T> {
         }
         
         self.entries[entryIndex] = nil
-        
-        self.numOfEdits += 1
     }
     
     public func asTuples() -> [(T, T)?] {
@@ -105,7 +101,6 @@ extension IndexedLinkedList where T: DefinedAdditiveOperation {
         self.entries[entryIndex]!.value = try self.entries[entryIndex]!.value + valueAddend
         self.entries[entryIndex]!.nextIndex = try self.entries[entryIndex]!.nextIndex + nextIndexAddend
         
-        self.numOfEdits += 1
         return (self.entries[entryIndex]!.value, self.entries[entryIndex]!.nextIndex)
     }
 }
