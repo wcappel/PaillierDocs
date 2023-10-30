@@ -93,15 +93,24 @@ public struct IndexedLinkedList<T> {
 }
 
 extension IndexedLinkedList where T: DefinedAdditiveOperation {
-    public mutating func addToEntry(valueAddend: T, nextIndexAddend: T, at entryIndex: Int) throws -> (T, T) {
+    public mutating func addToEntryValue(valueAddend: T, at entryIndex: Int) throws -> T {
         guard self.entries[entryIndex] != nil else {
             throw LinkedListError.IndexOutOfRange
         }
         
         self.entries[entryIndex]!.value = try self.entries[entryIndex]!.value + valueAddend
+        
+        return self.entries[entryIndex]!.value
+    }
+    
+    public mutating func addToEntryNext(nextIndexAddend: T, at entryIndex: Int) throws -> T {
+        guard self.entries[entryIndex] != nil else {
+            throw LinkedListError.IndexOutOfRange
+        }
+        
         self.entries[entryIndex]!.nextIndex = try self.entries[entryIndex]!.nextIndex + nextIndexAddend
         
-        return (self.entries[entryIndex]!.value, self.entries[entryIndex]!.nextIndex)
+        return self.entries[entryIndex]!.nextIndex
     }
 }
 
