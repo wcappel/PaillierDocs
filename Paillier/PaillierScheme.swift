@@ -86,7 +86,11 @@ public struct PaillierScheme {
 
     }
     
-    public struct PublicKey: Equatable {
+    public class PublicKey: Equatable {
+        public static func == (lhs: PaillierScheme.PublicKey, rhs: PaillierScheme.PublicKey) -> Bool {
+            return (lhs.n == rhs.n)
+        }
+        
         let g: BigInt
         let n: BigInt
         let nSquare: BigInt
@@ -122,7 +126,7 @@ public struct PaillierScheme {
         }
     }
     
-    public struct PrivateKey {
+    public class PrivateKey {
         public let publicKey: PublicKey
         let p: BigInt
         let q: BigInt
