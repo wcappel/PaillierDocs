@@ -39,7 +39,10 @@ var document = SLLEncryptedDocument(publicKey: pubKey)
 //print("O5: \(try await decryptDocument(doc: document, privateKey: privKey))")
 
 let str = "🌧⚡️asdfdsfas__한국어텍스트!!!ܐܣܛܪܢܓܠܐ ܐܠܦܒܝܬ"
-print(str.toIntegerChunkEncoding())
+let encoded = str.toIntegerChunkEncoding()
+print(encoded)
+let decoded = encoded.fromIntegerChunkEncoding()
+print(decoded)
 
 print("Done")
 
