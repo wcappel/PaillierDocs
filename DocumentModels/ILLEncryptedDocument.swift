@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  ILLEncryptedDocument.swift
 //  PaillierDocsProject
 //
 //  Created by Wilton Cappel on 10/25/23.
