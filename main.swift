@@ -38,7 +38,7 @@ var document = SLLEncryptedDocument(publicKey: pubKey)
 //try await document.handleOperation(operation: o5) // Gets operationally transformed to affect intended node's new index
 //print("O5: \(try await decryptDocument(doc: document, privateKey: privKey))")
 
-var c1 = (pubKey.encrypt(plaintext: -456578987654))
+var c1 = (pubKey.encrypt(plaintext: -20))
 print(try privKey.decrypt(encryptedNumber:c1))
 
 print("Done")

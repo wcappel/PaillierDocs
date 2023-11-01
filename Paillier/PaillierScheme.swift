@@ -109,9 +109,11 @@ public struct PaillierScheme {
         }
         
         public func encrypt(plaintext: BigInt) -> EncryptedNumber {
+            let encodedSigned = plaintext %% self.n
+            
             return EncryptedNumber(
                 publicKey: self,
-                ciphertext: self.rawEncrypt(plaintext: plaintext)
+                ciphertext: self.rawEncrypt(plaintext: encodedSigned)
             )
         }
         
@@ -187,7 +189,12 @@ public struct PaillierScheme {
                 throw PaillierSchemeError.DifferentPublicKeys
             }
             
-            return self.rawDecrypt(ciphertext: encryptedNumber.ciphertext)
+            let decryptedRaw = self.rawDecrypt(ciphertext: encryptedNumber.ciphertext)
+            
+            let decodedSigned = (decryptedRaw >= self.publicKey.n - self.publicKey.maxInt) ?
+            (decryptedRaw - self.publicKey.n) : decryptedRaw
+            
+            return decodedSigned
         }
         
         static func hFunc(_ x: BigInt, _ xsquare: BigInt, publicKey: PublicKey) throws -> BigInt {
