@@ -18,7 +18,7 @@ public struct SLLOperation {
     let operationType: SLLOperationType
     var targetIndex: Int
     let localRevisionNum: Int
-    let encryptedOperand: PaillierScheme.EncryptedNumber?
+    var encryptedOperand: PaillierScheme.EncryptedNumber?
     var ignore: Bool
     
     init(operationType: SLLOperationType, targetIndex: Int, localRevisionNum: Int, encryptedOperand: PaillierScheme.EncryptedNumber?) {
@@ -43,7 +43,7 @@ final actor SLLEncryptedDocument {
         self.operationHistory = []
     }
     
-    private func transformOperation(operation: SLLOperation) -> SLLOperation {
+    private func transformOperation(operation: SLLOperation) throws -> SLLOperation {
         if operation.localRevisionNum == self.revisionNum {
             return operation
         }
@@ -79,7 +79,7 @@ final actor SLLEncryptedDocument {
     
     public func handleOperation(operation: SLLOperation) throws {
         
-        let transformed = transformOperation(operation: operation)
+        let transformed = try transformOperation(operation: operation)
         
         if transformed.ignore { return }
         

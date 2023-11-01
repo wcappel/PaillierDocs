@@ -83,6 +83,16 @@ public struct PaillierScheme {
         throws -> PaillierScheme.EncryptedNumber {
             return try lhs.add(other: rhs)
         }
+        
+        public func negate() -> EncryptedNumber {
+            if self.publicKey.n - self.publicKey.maxInt <= -1 {
+                let negC = inverse(self.ciphertext, self.publicKey.nSquare)!
+                let negScalar = self.publicKey.n - (-1)
+                return EncryptedNumber(publicKey: self.publicKey, ciphertext: mod_exp(negC, negScalar, self.publicKey.nSquare))
+            }
+                        
+            return EncryptedNumber(publicKey: self.publicKey, ciphertext: mod_exp(self.ciphertext, BigInt(-1), self.publicKey.nSquare))
+        }
 
     }
     

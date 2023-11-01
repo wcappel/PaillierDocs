@@ -8,6 +8,25 @@ print("Started")
 let (pubKey, privKey) = try PaillierScheme.generatePaillierKeypair()
 var document = SLLEncryptedDocument(publicKey: pubKey)
 
+var c0 = (pubKey.encrypt(plaintext: 5188146770730811392))
+let o1 = SLLOperation(operationType: .INSERT_NEW_NODE, targetIndex: 0, localRevisionNum: 0, encryptedOperand: c0)
+
+var c1 = pubKey.encrypt(plaintext: 576460752303423488)
+let o2 = SLLOperation(operationType: .ADDITION_ON_NODE_VALUE, targetIndex: 0, localRevisionNum: 1, encryptedOperand: c1)
+
+var c2 = pubKey.encrypt(plaintext: 144115188075855872)
+let o3 = SLLOperation(operationType: .ADDITION_ON_NODE_VALUE, targetIndex: 0, localRevisionNum: 1, encryptedOperand: c2)
+
+
+try await document.handleOperation(operation: o1)
+print("O1: \(try await decryptDocument(doc: document, privateKey: privKey))")
+
+try await document.handleOperation(operation: o2)
+print("O2: \(try await decryptDocument(doc: document, privateKey: privKey))")
+
+try await document.handleOperation(operation: o3)
+print("O3: \(try await decryptDocument(doc: document, privateKey: privKey))")
+
 //var c1 = (pubKey.encrypt(plaintext: 5188146770730811392)) // Add node w/ "H_______"
 //c1.obfuscate()
 //let o1 = SLLOperation(operationType: .INSERT_NEW_NODE, targetIndex: 0, localRevisionNum: 0, encryptedOperand: c1)
@@ -38,11 +57,11 @@ var document = SLLEncryptedDocument(publicKey: pubKey)
 //try await document.handleOperation(operation: o5) // Gets operationally transformed to affect intended node's new index
 //print("O5: \(try await decryptDocument(doc: document, privateKey: privKey))")
 
-let str = "🌧⚡️asdfdsfas__한국어텍스트!!!ܐܣܛܪܢܓܠܐ ܐܠܦܒܝܬ"
-let encoded = str.toIntegerChunkEncoding()
-print(encoded)
-let decoded = encoded.fromIntegerChunkEncoding()
-print(decoded)
+//let str = "🌧⚡️asdfdsfas__한국어텍스트!!!ܐܣܛܪܢܓܠܐ ܐܠܦܒܝܬ"
+//let encoded = str.toIntegerChunkEncoding()
+//print(encoded)
+//let decoded = encoded.fromIntegerChunkEncoding()
+//print(decoded)
 
 print("Done")
 
