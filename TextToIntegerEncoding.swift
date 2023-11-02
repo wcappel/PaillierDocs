@@ -16,7 +16,7 @@ extension String {
         
         for u in self.utf8 {
             var asBinaryString = String(u, radix: 2)
-            if asBinaryString.count % 8 == 7 {
+            while asBinaryString.count % 8 != 0 {
                 asBinaryString = "0" + asBinaryString
             }
             
@@ -64,7 +64,7 @@ extension String {
 extension [BigInt] {
     private static func fromSingleChunkEncoding(bigInt: BigInt) -> [UInt8] {
         var binaryString = bigInt.string(base: 2)
-        if binaryString.count % 8 == 7 {
+        while binaryString.count % 8 != 0 {
             binaryString = "0" + binaryString
         }
         
@@ -72,11 +72,11 @@ extension [BigInt] {
         
         for i in 0...7 {
             let startOfByte: String.Index = binaryString.index(binaryString.startIndex, offsetBy: i * 8)
-            let endOfByte: String.Index = binaryString.index(binaryString.startIndex, offsetBy: (8 * (i + 1)))
+            let endOfByte = binaryString.index(binaryString.startIndex, offsetBy: 8 * (i + 1))
             
             byteStringArray.append(String(binaryString[startOfByte..<endOfByte]))
         }
-                
+        
         let utfValues: [UInt8] = byteStringArray.compactMap {
             let intValue = UInt8($0, radix: 2)
             if intValue == 0 {
