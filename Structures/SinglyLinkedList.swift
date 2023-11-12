@@ -124,6 +124,28 @@ public struct SinglyLinkedList<T> {
         self.size += 1
     }
     
+    public mutating func insertAt(_ value: T, index: Int) throws {
+        let newNode: SinglyLinkedNode<T> = SinglyLinkedNode(value: value)
+        
+        if index == 0 {
+            self.prepend(value)
+            return
+        }
+        
+        guard let nodeBeforeIndex = nodeAt(index - 1) else {
+            throw LinkedListError.IndexOutOfRange
+        }
+        
+        if nodeBeforeIndex.next == nil {
+            nodeBeforeIndex.next = newNode
+        } else {
+            newNode.next = nodeBeforeIndex.next
+            nodeBeforeIndex.next = newNode
+        }
+        
+        self.size += 1
+    }
+    
     public mutating func removeFirst() throws {
         guard self.head != nil else {
             throw LinkedListError.EmptyList

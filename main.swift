@@ -8,32 +8,31 @@ print("Started")
 let (pubKey, privKey) = try PaillierScheme.generatePaillierKeypair()
 var document = SLLEncryptedDocument(publicKey: pubKey)
 
-var c0 = (pubKey.encrypt(plaintext: 5188146770730811392))
-let o1 = SLLOperation(operationType: .INSERT_NEW_NODE, targetIndex: 0, localRevisionNum: 0, encryptedOperand: c0)
-
-var c1 = pubKey.encrypt(plaintext: 576460752303423488)
-let o2 = SLLOperation(operationType: .ADDITION_ON_NODE_VALUE, targetIndex: 0, localRevisionNum: 1, encryptedOperand: c1)
-
-var c2 = pubKey.encrypt(plaintext: 144115188075855872)
-let o3 = SLLOperation(operationType: .ADDITION_ON_NODE_VALUE, targetIndex: 0, localRevisionNum: 1, encryptedOperand: c2)
-
-
+var c1 = pubKey.encrypt(plaintext:"Paillier".toIntegerChunkEncoding()[0])
+c1.obfuscate()
+let o1 = SLLOperation(operationType: .INSERT_NEW_NODE, targetIndex: 0, localRevisionNum: 0, encryptedOperand: c1)
 try await document.handleOperation(operation: o1)
-print("O1: \(try await decryptDocument(doc: document, privateKey: privKey))")
+print("O1: \((try await decryptDocument(doc: document, privateKey: privKey)).fromIntegerChunkEncoding())")
 
-try await document.handleOperation(operation: o2)
-print("O2: \(try await decryptDocument(doc: document, privateKey: privKey))")
+var c2a = pubKey.encrypt(plaintext: "Paulluer".toIntegerChunkEncoding()[0] - "Paillier".toIntegerChunkEncoding()[0])
+c2a.obfuscate()
+let o2a = SLLOperation(operationType: .ADDITION_ON_NODE_VALUE, targetIndex: 0, localRevisionNum: 1, encryptedOperand: c2a)
+var c2b = pubKey.encrypt(plaintext: "Railliex".toIntegerChunkEncoding()[0] - "Paillier".toIntegerChunkEncoding()[0])
+c2b.obfuscate()
+let o2b = SLLOperation(operationType: .ADDITION_ON_NODE_VALUE, targetIndex: 0, localRevisionNum: 1, encryptedOperand: c2b)
+try await document.handleOperation(operation: o2a)
+print("O2a: \((try await decryptDocument(doc: document, privateKey: privKey)).fromIntegerChunkEncoding())")
+try await document.handleOperation(operation: o2b)
+print("O2b: \((try await decryptDocument(doc: document, privateKey: privKey)).fromIntegerChunkEncoding())")
 
-try await document.handleOperation(operation: o3)
-print("O3: \(try await decryptDocument(doc: document, privateKey: privKey))")
 
-//var c1 = (pubKey.encrypt(plaintext: 5188146770730811392)) // Add node w/ "H_______"
+//var c1 = (pubKey.encrypt(plaintext: "H".toIntegerChunkEncoding()[0])) // Add node w/ "H_______"
 //c1.obfuscate()
 //let o1 = SLLOperation(operationType: .INSERT_NEW_NODE, targetIndex: 0, localRevisionNum: 0, encryptedOperand: c1)
 //try await document.handleOperation(operation: o1)
 //print("O1: \(try await decryptDocument(doc: document, privateKey: privKey))")
 //
-//var c2 = pubKey.encrypt(plaintext: 28548185622315008) // Change node value to "Hello___"
+//var c2 = pubKey.encrypt(plaintext: "Hello".toIntegerChunkEncoding()[0] - "H".toIntegerChunkEncoding()[0]) // Change node value to "Hello___"
 //c2.obfuscate()
 //let o2 = SLLOperation(operationType: .ADDITION_ON_NODE_VALUE, targetIndex: 0, localRevisionNum: 1, encryptedOperand: c2)
 //try await document.handleOperation(operation: o2)
@@ -57,21 +56,15 @@ print("O3: \(try await decryptDocument(doc: document, privateKey: privKey))")
 //try await document.handleOperation(operation: o5) // Gets operationally transformed to affect intended node's new index
 //print("O5: \(try await decryptDocument(doc: document, privateKey: privKey))")
 
-//let str = "🌧⚡️asdfdsfas__한국어텍스트!!!ܐܣܛܪܢܓܠܐ ܐܠܦܒܝܬ"
-//let encoded = str.toIntegerChunkEncoding()
-//print(encoded)
-//let decoded = encoded.fromIntegerChunkEncoding()
-//print(decoded)
-
 print("Done")
 
 
-func decryptDocument(doc: SLLEncryptedDocument, privateKey: PaillierScheme.PrivateKey) async throws -> String {
-    var result = ""
+func decryptDocument(doc: SLLEncryptedDocument, privateKey: PaillierScheme.PrivateKey) async throws -> [BigInt] {
+    var result: [BigInt] = []
     let encValues = await document.getEncryptedValues()
     for c in encValues {
         let d = try privateKey.decrypt(encryptedNumber: c)
-        result += "\(d) "
+        result.append(d)
     }
     
     return result

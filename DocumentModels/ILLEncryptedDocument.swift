@@ -8,7 +8,7 @@
 import Foundation
 import Bignum
 
-public enum ILLOperationType {
+public enum ILLAtomicType {
     case INSERT_NEW_ENTRY
     case ADDITION_ON_ENTRY_VALUE
     case ADDITION_ON_ENTRY_NEXT
@@ -16,22 +16,90 @@ public enum ILLOperationType {
     case CHANGE_HEAD_INDEX
 }
 
+public enum ILLOperationType {
+    case INSERT_NEW_NODE
+    case REMOVE_NODE
+    case ADDITION_ON_NODE_VALUE
+}
+
 public struct EntryOperand {
     var value: PaillierScheme.EncryptedNumber?
     var next: PaillierScheme.EncryptedNumber?
 }
 
-public struct ILLOperation {
-    let operationType: ILLOperationType
+public struct ILLAtomicChange {
+    let atomicType: ILLAtomicType
     var targetEntryIndex: Int
     var entryOperand: EntryOperand
-    let localRevisionNum: Int
-    var ignore: Bool
     
-    init(operationType: ILLOperationType, targetEntryIndex: Int, entry: EntryOperand, localRevisionNum: Int) {
-        self.operationType = operationType
+    init(atomicType: ILLAtomicType, targetEntryIndex: Int, entry: EntryOperand, localRevisionNum: Int) {
+        self.atomicType = atomicType
         self.targetEntryIndex = targetEntryIndex
         self.entryOperand = entry
+    }
+}
+
+public enum ILLOperationError: Error {
+    case invalidChangesOrOrderForOperation
+    case invalidNumberOfChangesForOperation
+}
+
+public struct ILLOperation {
+    let operationType: ILLOperationType
+    var atomicChanges: [ILLAtomicChange]
+    var localRevisionNum: Int
+    var ignore: Bool
+    
+    static func buildInsert(at: Int, entry: EntryOperand, otherNextIndex: Int, otherNextAddend: PaillierScheme.EncryptedNumber, localRevisionNum: Int) throws -> Self {
+        let insertChange = ILLAtomicChange(atomicType: .INSERT_NEW_ENTRY, targetEntryIndex: at, entry: entry, localRevisionNum: localRevisionNum)
+        let addChange = ILLAtomicChange(atomicType: .ADDITION_ON_ENTRY_NEXT, targetEntryIndex: otherNextIndex, entry: EntryOperand(next: otherNextAddend), localRevisionNum: localRevisionNum)
+        
+        return try Self(operationType: ILLOperationType.INSERT_NEW_NODE, atomicChanges: addChange, insertChange, localRevisionNum: localRevisionNum)
+    }
+    
+    static func buildRemove() -> Self {
+        
+    }
+    
+    static func buildAddition() -> Self {
+        
+    }
+    
+    init(operationType: ILLOperationType, atomicChanges: ILLAtomicChange..., localRevisionNum: Int) throws {
+        switch operationType {
+        case .INSERT_NEW_NODE:
+            guard atomicChanges.count == 2 else {
+                throw ILLOperationError.invalidNumberOfChangesForOperation
+            }
+            
+            guard atomicChanges[0].atomicType == .ADDITION_ON_ENTRY_VALUE
+            && atomicChanges[1].atomicType == .ADDITION_ON_ENTRY_NEXT else {
+                throw ILLOperationError.invalidChangesOrOrderForOperation
+            }
+        case .REMOVE_NODE:
+            guard atomicChanges.count == 2 else {
+                throw ILLOperationError.invalidNumberOfChangesForOperation
+            }
+            
+            guard atomicChanges[0].atomicType == .REMOVE_ENTRY
+            && atomicChanges[1].atomicType == .ADDITION_ON_ENTRY_NEXT else {
+                throw ILLOperationError.invalidChangesOrOrderForOperation
+            }
+            
+            self.atomicChanges.append(contentsOf: atomicChanges)
+        case .ADDITION_ON_NODE_VALUE:
+            guard atomicChanges.count == 1 else {
+                throw ILLOperationError.invalidNumberOfChangesForOperation
+            }
+            
+            guard atomicChanges[0].atomicType == .ADDITION_ON_ENTRY_VALUE else {
+                throw ILLOperationError.invalidChangesOrOrderForOperation
+            }
+        }
+        
+        self.atomicChanges.append(contentsOf: atomicChanges)
+        
+        self.operationType = operationType
         self.localRevisionNum = localRevisionNum
         self.ignore = false
     }
@@ -59,22 +127,15 @@ final actor ILLEncryptedDocument {
         
         var transformedOperation = operation
         for i in (0...revisionDiff - 1).reversed() {
-//            switch self.operationHistory[i].operationType {
-//            case .INSERT_NEW_ENTRY:
-//
-//            case .REMOVE_ENTRY:
-//
-//            case .ADDITION_ON_ENTRY_VALUE:
-//                if operation.targetEntryIndex == operationHistory[i].targetEntryIndex {
-//                    transformedOperation.ignore = true
-//                    return transformedOperation
-//                }
-//            case .ADDITION_ON_ENTRY_NEXT:
-//
-//            case .CHANGE_HEAD_INDEX:
-//                transformedOperation.ignore = true
-//                return transformedOperation
-//            }
+            switch self.operationHistory[i].operationType {
+                
+            case .INSERT_NEW_NODE:
+                <#code#>
+            case .REMOVE_NODE:
+                <#code#>
+            case .ADDITION_ON_NODE_VALUE:
+                <#code#>
+            }
         }
         
         return transformedOperation
@@ -86,16 +147,14 @@ final actor ILLEncryptedDocument {
         if transformed.ignore { return }
         
         switch transformed.operationType {
-        case .ADDITION_ON_ENTRY_VALUE:
-            try self.textStructure.addToEntryValue(valueAddend: operation.entryOperand.value!, at: operation.targetEntryIndex)
-        case .ADDITION_ON_ENTRY_NEXT:
-            try self.textStructure.addToEntryNext(nextIndexAddend: operation.entryOperand.next!, at: operation.targetEntryIndex)
-        case .INSERT_NEW_ENTRY:
-            try self.textStructure.addEntryAt(value: operation.entryOperand.value!, nextIndex: operation.entryOperand.next!, at: operation.targetEntryIndex)
-        case .REMOVE_ENTRY:
-            try self.textStructure.removeEntry(at: operation.targetEntryIndex)
-        case .CHANGE_HEAD_INDEX:
-            try self.textStructure.changeHeadIndex(newHeadIndex: operation.entryOperand.value!)
+        case .INSERT_NEW_NODE:
+            try self.textStructure.addToEntryNext(nextIndexAddend: transformed.atomicChanges[1].entryOperand.next!, at: transformed.atomicChanges[1].targetEntryIndex)
+            try self.textStructure.addEntryAt(value: transformed.atomicChanges[0].entryOperand.value!, nextIndex: transformed.atomicChanges[0].entryOperand.next!, at: transformed.atomicChanges[0].targetEntryIndex)
+        case .REMOVE_NODE:
+            try self.textStructure.addToEntryNext(nextIndexAddend: transformed.atomicChanges[1].entryOperand.next!, at: transformed.atomicChanges[1].targetEntryIndex)
+            try self.textStructure.removeEntry(at: transformed.atomicChanges[0].targetEntryIndex)
+        case .ADDITION_ON_NODE_VALUE:
+            try self.textStructure.addToEntryValue(valueAddend: transformed.atomicChanges[0].entryOperand.value!, at: transformed.atomicChanges[0].targetEntryIndex)
         }
         
         self.revisionNum += 1

@@ -20,7 +20,7 @@ final private class IndexedNode<T> {
 public struct IndexedLinkedList<T> {
     let INITIALIZED_NUM_OF_ENTRIES: Int = 100
     private var entries: [IndexedNode<T>?]
-    private var headIndex: T?
+    private var headIndex: Int?
     
     // How will a user know where the head is?
     // Could we just use a property to track it?
@@ -69,7 +69,7 @@ public struct IndexedLinkedList<T> {
         self.entries[entryIndex] = newEntry
     }
     
-    public mutating func changeHeadIndex(newHeadIndex: T) {
+    public mutating func changeHeadIndex(newHeadIndex: Int) {
         self.headIndex = newHeadIndex
     }
     
