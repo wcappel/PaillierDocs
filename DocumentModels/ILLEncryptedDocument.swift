@@ -32,7 +32,7 @@ public struct ILLAtomicChange {
     var targetEntryIndex: Int
     var entryOperand: EntryOperand
     
-    init(atomicType: ILLAtomicType, targetEntryIndex: Int, entry: EntryOperand, localRevisionNum: Int) {
+    init(atomicType: ILLAtomicType, targetEntryIndex: Int, entry: EntryOperand) {
         self.atomicType = atomicType
         self.targetEntryIndex = targetEntryIndex
         self.entryOperand = entry
@@ -51,52 +51,55 @@ public struct ILLOperation {
     var ignore: Bool
     
     static func buildInsert(at: Int, entry: EntryOperand, otherNextIndex: Int, otherNextAddend: PaillierScheme.EncryptedNumber, localRevisionNum: Int) throws -> Self {
-        let insertChange = ILLAtomicChange(atomicType: .INSERT_NEW_ENTRY, targetEntryIndex: at, entry: entry, localRevisionNum: localRevisionNum)
-        let addChange = ILLAtomicChange(atomicType: .ADDITION_ON_ENTRY_NEXT, targetEntryIndex: otherNextIndex, entry: EntryOperand(next: otherNextAddend), localRevisionNum: localRevisionNum)
+        let insertChange = ILLAtomicChange(atomicType: .INSERT_NEW_ENTRY, targetEntryIndex: at, entry: entry)
+        let addChange = ILLAtomicChange(atomicType: .ADDITION_ON_ENTRY_NEXT, targetEntryIndex: otherNextIndex, entry: EntryOperand(next: otherNextAddend))
         
-        return try Self(operationType: ILLOperationType.INSERT_NEW_NODE, atomicChanges: addChange, insertChange, localRevisionNum: localRevisionNum)
+        return try Self(operationType: ILLOperationType.INSERT_NEW_NODE, operationChanges: addChange, insertChange, localRevisionNum: localRevisionNum)
     }
     
-    static func buildRemove() -> Self {
+    static func buildRemove(at: Int, otherNextIndex: Int, otherNextAddend: PaillierScheme.EncryptedNumber, localRevisionNum: Int) throws -> Self {
+        let removeChange = ILLAtomicChange(atomicType: .REMOVE_ENTRY, targetEntryIndex: at, entry: EntryOperand(value: nil, next: nil))
+        let addChange = ILLAtomicChange(atomicType: .ADDITION_ON_ENTRY_NEXT, targetEntryIndex: otherNextIndex, entry: EntryOperand(next: otherNextAddend))
         
+        return try Self(operationType: ILLOperationType.REMOVE_NODE, operationChanges: removeChange, addChange, localRevisionNum: localRevisionNum)
     }
     
-    static func buildAddition() -> Self {
-        
+    static func buildAddition(at: Int, entryOperand: EntryOperand, localRevisionNum: Int) throws -> Self {
+        return try Self(operationType: ILLOperationType.ADDITION_ON_NODE_VALUE, operationChanges: ILLAtomicChange(atomicType: .ADDITION_ON_ENTRY_VALUE, targetEntryIndex: at, entry: entryOperand), localRevisionNum: localRevisionNum)
     }
     
-    init(operationType: ILLOperationType, atomicChanges: ILLAtomicChange..., localRevisionNum: Int) throws {
+    init(operationType: ILLOperationType, operationChanges: ILLAtomicChange..., localRevisionNum: Int) throws {
         switch operationType {
         case .INSERT_NEW_NODE:
-            guard atomicChanges.count == 2 else {
+            guard operationChanges.count == 2 else {
                 throw ILLOperationError.invalidNumberOfChangesForOperation
             }
             
-            guard atomicChanges[0].atomicType == .ADDITION_ON_ENTRY_VALUE
-            && atomicChanges[1].atomicType == .ADDITION_ON_ENTRY_NEXT else {
+            guard operationChanges[0].atomicType == .ADDITION_ON_ENTRY_VALUE
+            && operationChanges[1].atomicType == .ADDITION_ON_ENTRY_NEXT else {
                 throw ILLOperationError.invalidChangesOrOrderForOperation
             }
         case .REMOVE_NODE:
-            guard atomicChanges.count == 2 else {
+            guard operationChanges.count == 2 else {
                 throw ILLOperationError.invalidNumberOfChangesForOperation
             }
             
-            guard atomicChanges[0].atomicType == .REMOVE_ENTRY
-            && atomicChanges[1].atomicType == .ADDITION_ON_ENTRY_NEXT else {
+            guard operationChanges[0].atomicType == .REMOVE_ENTRY
+            && operationChanges[1].atomicType == .ADDITION_ON_ENTRY_NEXT else {
                 throw ILLOperationError.invalidChangesOrOrderForOperation
             }
             
-            self.atomicChanges.append(contentsOf: atomicChanges)
         case .ADDITION_ON_NODE_VALUE:
-            guard atomicChanges.count == 1 else {
+            guard operationChanges.count == 1 else {
                 throw ILLOperationError.invalidNumberOfChangesForOperation
             }
             
-            guard atomicChanges[0].atomicType == .ADDITION_ON_ENTRY_VALUE else {
+            guard operationChanges[0].atomicType == .ADDITION_ON_ENTRY_VALUE else {
                 throw ILLOperationError.invalidChangesOrOrderForOperation
             }
         }
         
+        self.atomicChanges = []
         self.atomicChanges.append(contentsOf: atomicChanges)
         
         self.operationType = operationType
@@ -118,7 +121,7 @@ final actor ILLEncryptedDocument {
         self.operationHistory = []
     }
     
-    private func homomorphicOperationalTransform(operation: ILLOperation) -> ILLOperation {
+    private func transformOperation(operation: ILLOperation) -> ILLOperation {
         if operation.localRevisionNum == self.revisionNum {
             return operation
         }
@@ -127,22 +130,22 @@ final actor ILLEncryptedDocument {
         
         var transformedOperation = operation
         for i in (0...revisionDiff - 1).reversed() {
-            switch self.operationHistory[i].operationType {
-                
-            case .INSERT_NEW_NODE:
-                <#code#>
-            case .REMOVE_NODE:
-                <#code#>
-            case .ADDITION_ON_NODE_VALUE:
-                <#code#>
-            }
+//            switch self.operationHistory[i].operationType {
+//
+//            case .INSERT_NEW_NODE:
+//                <#code#>
+//            case .REMOVE_NODE:
+//                <#code#>
+//            case .ADDITION_ON_NODE_VALUE:
+//                <#code#>
+//            }
         }
         
         return transformedOperation
     }
     
     public func handleOperation(operation: ILLOperation) throws {
-        let transformed = homomorphicOperationalTransform(operation: operation)
+        let transformed = transformOperation(operation: operation)
         
         if transformed.ignore { return }
         
