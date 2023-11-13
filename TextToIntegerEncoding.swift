@@ -61,9 +61,9 @@ extension String {
     }
 }
 
-extension [BigInt] {
-    private static func fromSingleChunkEncoding(bigInt: BigInt) -> [UInt8] {
-        var binaryString = bigInt.string(base: 2)
+extension BigInt {
+    public func fromSingleChunkEncoding() -> [UInt8] {
+        var binaryString = self.string(base: 2)
         while binaryString.count % 8 != 0 {
             binaryString = "0" + binaryString
         }
@@ -88,11 +88,13 @@ extension [BigInt] {
         
         return utfValues
     }
-    
+}
+
+extension [BigInt] {
     public func fromIntegerChunkEncoding() -> String {
         var utfValues: [UInt8] = []
         self.forEach {
-            utfValues.append(contentsOf: Array<BigInt>.fromSingleChunkEncoding(bigInt: $0))
+            utfValues.append(contentsOf: $0.fromSingleChunkEncoding())
         }
         
         return String(bytes: utfValues, encoding: .utf8)!

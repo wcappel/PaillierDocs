@@ -13,7 +13,7 @@ public enum ILLAtomicType {
     case ADDITION_ON_ENTRY_VALUE
     case ADDITION_ON_ENTRY_NEXT
     case REMOVE_ENTRY
-    case CHANGE_HEAD_INDEX
+    // case CHANGE_HEAD_INDEX
 }
 
 public enum ILLOperationType {
@@ -180,11 +180,11 @@ final actor ILLEncryptedDocument {
         self.operationHistory.insert(operation, at: 0)
     }
     
-    public func getEncryptedValues() -> (PaillierScheme.EncryptedNumber?, [(PaillierScheme.EncryptedNumber, PaillierScheme.EncryptedNumber?)?]) {
+    public func getEncryptedValues() -> [(PaillierScheme.EncryptedNumber, PaillierScheme.EncryptedNumber?)?] {
         let values: [(PaillierScheme.EncryptedNumber, PaillierScheme.EncryptedNumber?)?] = self.textStructure.asTuples()
-        let headIndex: PaillierScheme.EncryptedNumber? = self.textStructure.getEncryptedHeadIndex()
+        // let headIndex: PaillierScheme.EncryptedNumber? = self.textStructure.getEncryptedHeadIndex()
         
-        return (headIndex, values)
+        return values
     }
 }
 

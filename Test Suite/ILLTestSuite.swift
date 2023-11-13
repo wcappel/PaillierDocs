@@ -37,9 +37,9 @@ class ILLTestSuite {
         var strResult = ""
         for d in decrypted {
             if let d {
-                strResult += "\(d)\n"
+                strResult += "\t[\(String(bytes: d.0.fromSingleChunkEncoding(), encoding: .utf8)!), \(d.1)]\n"
             } else {
-                strResult += "NULL\n"
+                strResult += "\tNULL\n"
             }
         }
         
@@ -51,24 +51,32 @@ class ILLTestSuite {
         print(self.knownHistory)
     }
     
-    func decryptILLDocument(doc: ILLEncryptedDocument, privateKey: PaillierScheme.PrivateKey) async throws -> [BigInt?] {
-        var result: [BigInt?] = []
-        let (headIndex, encValues) = await doc.getEncryptedValues()
+    func decryptILLDocument(doc: ILLEncryptedDocument, privateKey: PaillierScheme.PrivateKey) async throws -> [(BigInt, BigInt?)?] {
+        var result: [(BigInt, BigInt?)?] = []
+        let encValues = await doc.getEncryptedValues()
         
-        guard headIndex != nil else {
-            throw ILLTestSuiteError.noHeadIndex
-        }
+//        guard headIndex != nil else {
+//            throw ILLTestSuiteError.noHeadIndex
+//        }
+//
+//        var subsequent: BigInt? = try privateKey.decrypt(encryptedNumber: headIndex!)
+//        while let currNext = subsequent {
+//            let asInt: Int = Int(currNext.string())!
+//            let entry = encValues[asInt]
+//
+//            if let entry {
+//                result.append(try privateKey.decrypt(encryptedNumber: entry.0))
+//                subsequent = entry.1 != nil ? try privateKey.decrypt(encryptedNumber: entry.1!) : nil
+//            } else {
+//                break
+//            }
+//        }
         
-        var subsequent: BigInt? = try privateKey.decrypt(encryptedNumber: headIndex!)
-        while let currNext = subsequent {
-            let asInt: Int = Int(currNext.string())!
-            let entry = encValues[asInt]
-            
-            if let entry {
-                result.append(try privateKey.decrypt(encryptedNumber: entry.0))
-                subsequent = entry.1 != nil ? try privateKey.decrypt(encryptedNumber: entry.1!) : nil
+        for e in encValues {
+            if let e {
+                result.append((try privateKey.decrypt(encryptedNumber: e.0), e.1 != nil ? try privateKey.decrypt(encryptedNumber: e.1!) : nil))
             } else {
-                break
+                result.append(nil)
             }
         }
         

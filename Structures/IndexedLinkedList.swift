@@ -18,16 +18,15 @@ final private class IndexedNode<T> {
 }
 
 public struct IndexedLinkedList<T> {
-    let INITIALIZED_NUM_OF_ENTRIES: Int = 100
+    let INITIALIZED_NUM_OF_ENTRIES: Int = 10
     private var entries: [IndexedNode<T>?]
-    private var headIndex: T?
+    // private var headIndex: T?
     
     // How will a user know where the head is?
     // Could we just use a property to track it?
     
     public init() {
         self.entries = []
-        self.headIndex = nil
         
         for _ in 0...INITIALIZED_NUM_OF_ENTRIES - 1 {
             addToArrayInOut(nil, array: &self.entries)
@@ -69,9 +68,9 @@ public struct IndexedLinkedList<T> {
         self.entries[entryIndex] = newEntry
     }
     
-    public mutating func changeHeadIndex(newHeadIndex: T) {
-        self.headIndex = newHeadIndex
-    }
+//    public mutating func changeHeadIndex(newHeadIndex: T) {
+//        self.headIndex = newHeadIndex
+//    }
     
     public mutating func removeEntry(at entryIndex: Int) throws {
         guard entryIndex < self.entries.count else {
@@ -91,9 +90,9 @@ public struct IndexedLinkedList<T> {
         }
     }
     
-    public func getEncryptedHeadIndex() -> T? {
-        return self.headIndex
-    }
+//    public func getEncryptedHeadIndex() -> T? {
+//        return self.headIndex
+//    }
 }
 
 extension IndexedLinkedList where T: DefinedAdditiveOperation {
