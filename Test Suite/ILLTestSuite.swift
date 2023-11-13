@@ -66,7 +66,7 @@ class ILLTestSuite {
             
             if let entry {
                 result.append(try privateKey.decrypt(encryptedNumber: entry.0))
-                subsequent = try privateKey.decrypt(encryptedNumber: entry.1)
+                subsequent = entry.1 != nil ? try privateKey.decrypt(encryptedNumber: entry.1!) : nil
             } else {
                 break
             }

@@ -9,9 +9,9 @@ import Foundation
 
 final private class IndexedNode<T> {
     var value: T
-    var nextIndex: T
+    var nextIndex: T?
     
-    init(value: T, nextIndex: T) {
+    init(value: T, nextIndex: T?) {
         self.value = value
         self.nextIndex = nextIndex
     }
@@ -55,7 +55,7 @@ public struct IndexedLinkedList<T> {
         self.entries[self.entries.count / 2] = newEntry
     }
     
-    public mutating func addEntryAt(value: T, nextIndex: T, at entryIndex: Int) throws {
+    public mutating func addEntryAt(value: T, nextIndex: T?, at entryIndex: Int) throws {
         let newEntry = IndexedNode(value: value, nextIndex: nextIndex)
         
         guard entryIndex < self.entries.count else {
@@ -81,8 +81,8 @@ public struct IndexedLinkedList<T> {
         self.entries[entryIndex] = nil
     }
     
-    public func asTuples() -> [(T, T)?] {
-        return self.entries.map { entry -> (T, T)? in
+    public func asTuples() -> [(T, T?)?] {
+        return self.entries.map { entry -> (T, T?)? in
             if entry != nil {
                 return (entry!.value, entry!.nextIndex)
             }
@@ -107,12 +107,12 @@ extension IndexedLinkedList where T: DefinedAdditiveOperation {
         return self.entries[entryIndex]!.value
     }
     
-    public mutating func addToEntryNext(nextIndexAddend: T, at entryIndex: Int) throws -> T {
+    public mutating func addToEntryNext(nextIndexAddend: T, at entryIndex: Int) throws -> T? {
         guard self.entries[entryIndex] != nil else {
             throw LinkedListError.IndexOutOfRange
         }
-        
-        self.entries[entryIndex]!.nextIndex = try self.entries[entryIndex]!.nextIndex + nextIndexAddend
+                
+        self.entries[entryIndex]!.nextIndex = self.entries[entryIndex]!.nextIndex != nil ? try self.entries[entryIndex]!.nextIndex! + nextIndexAddend : nextIndexAddend
         
         return self.entries[entryIndex]!.nextIndex
     }

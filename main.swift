@@ -9,8 +9,10 @@ let (pubKey, privKey) = try PaillierScheme.generatePaillierKeypair()
 
 var document = ILLEncryptedDocument(publicKey: pubKey)
 var testSuite = ILLTestSuite(doc: document, privKey: privKey)
-
-
+var c1 = pubKey.encrypt(plaintext: "Hello".toIntegerChunkEncoding()[0])
+var o1 = try ILLOperation.buildInsert(at: 0, entry: EntryOperand(value: c1, next: nil), otherNextIndex: 0, otherNextAddend: nil, localRevisionNum: 0)
+await testSuite.perform(operation: o1)
+try await testSuite.showDocument()
 
 
 
