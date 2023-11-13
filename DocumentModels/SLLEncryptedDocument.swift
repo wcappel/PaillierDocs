@@ -56,15 +56,16 @@ final actor SLLEncryptedDocument {
         for i in (0...revisionDiff - 1).reversed() {
             switch self.operationHistory[i].operationType  {
             case .INSERT_NEW_NODE:
-                if operation.targetIndex >= operationHistory[i].targetIndex {
+                if transformedOperation.targetIndex >= operationHistory[i].targetIndex {
                     transformedOperation.targetIndex += 1
                 }
             case .REMOVE_NODE:
-                if operation.targetIndex <= operationHistory[i].targetIndex {
+                if transformedOperation.targetIndex <= operationHistory[i].targetIndex {
                     transformedOperation.targetIndex -= 1
                 }
             case .ADDITION_ON_NODE_VALUE:
-                if operation.targetIndex == operationHistory[i].targetIndex && operation.operationType == .ADDITION_ON_NODE_VALUE {
+                if transformedOperation.targetIndex == operationHistory[i].targetIndex
+                && transformedOperation.operationType == .ADDITION_ON_NODE_VALUE {
                     transformedOperation.encryptedOperand = try operationHistory[i].encryptedOperand!.negate() + transformedOperation.encryptedOperand!
                 }
             }

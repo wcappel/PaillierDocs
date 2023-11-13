@@ -133,11 +133,15 @@ final actor ILLEncryptedDocument {
 //            switch self.operationHistory[i].operationType {
 //
 //            case .INSERT_NEW_NODE:
-//                <#code#>
+//                if self.operationHistory[i].atomicChanges[0].targetEntryIndex >= transformedOperation.atomicChanges[0].targetEntryIndex {
+//
+//                }
 //            case .REMOVE_NODE:
-//                <#code#>
+//
 //            case .ADDITION_ON_NODE_VALUE:
-//                <#code#>
+//                if self.operationHistory[i].operationType == .ADDITION_ON_NODE_VALUE && self.operationHistory[i].atomicChanges[0].targetEntryIndex == transformedOperation.atomicChanges[0].targetEntryIndex {
+//                    transformedOperation.ignore = true
+//                }
 //            }
         }
         
@@ -162,6 +166,13 @@ final actor ILLEncryptedDocument {
         
         self.revisionNum += 1
         self.operationHistory.insert(operation, at: 0)
+    }
+    
+    public func getEncryptedValues() -> (PaillierScheme.EncryptedNumber?, [(PaillierScheme.EncryptedNumber, PaillierScheme.EncryptedNumber)?]) {
+        let values: [(PaillierScheme.EncryptedNumber, PaillierScheme.EncryptedNumber)?] = self.textStructure.asTuples()
+        let headIndex: PaillierScheme.EncryptedNumber? = self.textStructure.getEncryptedHeadIndex()
+        
+        return (headIndex, values)
     }
 }
 
