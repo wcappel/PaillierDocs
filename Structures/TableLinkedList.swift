@@ -1,5 +1,5 @@
 //
-//  IndexedLinkedList.swift
+//  TableLinkedList.swift
 //  
 //
 //  Created by Wilton Cappel on 10/20/23.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-final private class IndexedNode<T> {
+final private class NodeEntry<T> {
     var value: T
     var nextIndex: T?
     
@@ -17,9 +17,9 @@ final private class IndexedNode<T> {
     }
 }
 
-public struct IndexedLinkedList<T> {
+public struct TableLinkedList<T> {
     let INITIALIZED_NUM_OF_ENTRIES: Int = 10
-    private var entries: [IndexedNode<T>?]
+    private var entries: [NodeEntry<T>?]
     // private var headIndex: T?
     
     // How will a user know where the head is?
@@ -41,7 +41,7 @@ public struct IndexedLinkedList<T> {
     }
     
     public mutating func addEntry(value: T, nextIndex: T) {
-        let newEntry = IndexedNode(value: value, nextIndex: nextIndex)
+        let newEntry = NodeEntry(value: value, nextIndex: nextIndex)
         
         for i in 0...self.entries.count - 1 {
             if self.entries[i] == nil {
@@ -55,14 +55,14 @@ public struct IndexedLinkedList<T> {
     }
     
     public mutating func addEntryAt(value: T, nextIndex: T?, at entryIndex: Int) throws {
-        let newEntry = IndexedNode(value: value, nextIndex: nextIndex)
+        let newEntry = NodeEntry(value: value, nextIndex: nextIndex)
         
         guard entryIndex < self.entries.count else {
             throw LinkedListError.IndexOutOfRange
         }
         
         guard self.entries[entryIndex] == nil else {
-            throw IndexedLLError.EntryIndexAlreadyOccupied
+            throw TableLLError.EntryIndexAlreadyOccupied
         }
         
         self.entries[entryIndex] = newEntry
@@ -95,7 +95,7 @@ public struct IndexedLinkedList<T> {
 //    }
 }
 
-extension IndexedLinkedList where T: DefinedAdditiveOperation {
+extension TableLinkedList where T: DefinedAdditiveOperation {
     public mutating func addToEntryValue(valueAddend: T, at entryIndex: Int) throws -> T {
         guard self.entries[entryIndex] != nil else {
             throw LinkedListError.IndexOutOfRange
@@ -123,7 +123,7 @@ public func addToArrayInOut<T: Any>(_ value: T, array: inout [T]) {
     array.append(value)
 }
 
-public enum IndexedLLError: Error {
+public enum TableLLError: Error {
     case EntryIndexAlreadyOccupied
 }
 

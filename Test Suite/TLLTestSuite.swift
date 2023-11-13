@@ -1,5 +1,5 @@
 //
-//  ILLTestSuite.swift
+//  TLLTestSuite.swift
 //  
 //
 //  Created by Wilton Cappel on 11/10/23.
@@ -8,23 +8,24 @@
 import Foundation
 import Bignum
 
-class ILLTestSuite {
-    private var encryptedDoc: ILLEncryptedDocument
+class TLLTestSuite {
+    private var encryptedDoc: TLLEncryptedDocument
     private let privKey: PaillierScheme.PrivateKey
     private var localRevisionNum: Int
-    private var knownHistory: [ILLOperation]
+    private var knownHistory: [TLLOperation]
     
-    public init(doc: ILLEncryptedDocument, privKey: PaillierScheme.PrivateKey) {
+    public init(doc: TLLEncryptedDocument, privKey: PaillierScheme.PrivateKey) {
         self.encryptedDoc = doc
         self.privKey = privKey
         self.localRevisionNum = 0
         self.knownHistory = []
     }
     
-    public func perform(operation: ILLOperation, laggingBy: Int = 0) async {
+    public func perform(operation: TLLOperation, laggingBy: Int = 0) async {
         assert(laggingBy >= 0)
         do {
             try await encryptedDoc.handleOperation(operation: operation)
+            self.localRevisionNum += 1
             knownHistory.append(operation)
             try await self.showDocument()
         } catch {
@@ -33,7 +34,7 @@ class ILLTestSuite {
     }
     
     public func showDocument() async throws {
-        let decrypted = try await decryptILLDocument(doc: self.encryptedDoc, privateKey: self.privKey)
+        let decrypted = try await decryptTLLDocument(doc: self.encryptedDoc, privateKey: self.privKey)
         var strResult = ""
         for d in decrypted {
             if let d {
@@ -51,12 +52,12 @@ class ILLTestSuite {
         print(self.knownHistory)
     }
     
-    func decryptILLDocument(doc: ILLEncryptedDocument, privateKey: PaillierScheme.PrivateKey) async throws -> [(BigInt, BigInt?)?] {
+    func decryptTLLDocument(doc: TLLEncryptedDocument, privateKey: PaillierScheme.PrivateKey) async throws -> [(BigInt, BigInt?)?] {
         var result: [(BigInt, BigInt?)?] = []
         let encValues = await doc.getEncryptedValues()
         
 //        guard headIndex != nil else {
-//            throw ILLTestSuiteError.noHeadIndex
+//            throw TLLTestSuiteError.noHeadIndex
 //        }
 //
 //        var subsequent: BigInt? = try privateKey.decrypt(encryptedNumber: headIndex!)
@@ -84,7 +85,7 @@ class ILLTestSuite {
     }
 }
 
-public enum ILLTestSuiteError: Error {
+public enum TLLTestSuiteError: Error {
     case noHeadIndex
 }
 
