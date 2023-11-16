@@ -17,8 +17,7 @@ public enum TLLAtomicType {
 }
 
 public enum TLLOperationType {
-    case INSERT_NEW_NODE
-    case REMOVE_NODE
+    case INSERT_OR_DELETE_NODE
     case ADDITION_ON_NODE_VALUE
 }
 
@@ -50,26 +49,15 @@ public struct TLLOperation {
     var localRevisionNum: Int
     var ignore: Bool
     
-    static func buildInsert(at: Int, entry: EntryOperand, otherNextIndex: Int?, otherNextAddend: PaillierScheme.EncryptedNumber?, localRevisionNum: Int) throws -> Self {
-        let insertChange = TLLAtomicChange(atomicType: .INSERT_NEW_ENTRY, targetEntryIndex: at, entry: entry)
+    static func buildInsertOrRemove(at: Int, entry: EntryOperand, otherNextIndex: Int?, otherNextAddend: PaillierScheme.EncryptedNumber?, localRevisionNum: Int) throws -> Self {
+        let insertOrRemoveChange = TLLAtomicChange(atomicType: .INSERT_NEW_ENTRY, targetEntryIndex: at, entry: entry)
         let addChange = (otherNextIndex != nil && otherNextAddend != nil) ? TLLAtomicChange(atomicType: .ADDITION_ON_ENTRY_NEXT, targetEntryIndex: otherNextIndex!, entry: EntryOperand(next: otherNextAddend)) : nil
         
         if let addChange {
-            return try Self(operationType: TLLOperationType.INSERT_NEW_NODE, operationChanges: insertChange, addChange, localRevisionNum: localRevisionNum)
+            return try Self(operationType: TLLOperationType.INSERT_OR_DELETE_NODE, operationChanges: insertOrRemoveChange, addChange, localRevisionNum: localRevisionNum)
         }
         
-        return try Self(operationType: TLLOperationType.INSERT_NEW_NODE, operationChanges: insertChange, localRevisionNum: localRevisionNum)
-    }
-    
-    static func buildRemove(at: Int, otherNextIndex: Int?, otherNextAddend: PaillierScheme.EncryptedNumber?, localRevisionNum: Int) throws -> Self {
-        let removeChange = TLLAtomicChange(atomicType: .REMOVE_ENTRY, targetEntryIndex: at, entry: EntryOperand(value: nil, next: nil))
-        let addChange = (otherNextIndex != nil && otherNextAddend != nil) ? TLLAtomicChange(atomicType: .ADDITION_ON_ENTRY_NEXT, targetEntryIndex: otherNextIndex!, entry: EntryOperand(next: otherNextAddend)) : nil
-        
-        if let addChange {
-            return try Self(operationType: TLLOperationType.REMOVE_NODE, operationChanges: removeChange, addChange, localRevisionNum: localRevisionNum)
-        }
-        
-        return try Self(operationType: TLLOperationType.REMOVE_NODE, operationChanges: removeChange, localRevisionNum: localRevisionNum)
+        return try Self(operationType: TLLOperationType.INSERT_OR_DELETE_NODE, operationChanges: insertOrRemoveChange, localRevisionNum: localRevisionNum)
     }
     
     static func buildAddition(at: Int, entryOperand: EntryOperand, localRevisionNum: Int) throws -> Self {
@@ -78,7 +66,7 @@ public struct TLLOperation {
     
     init(operationType: TLLOperationType, operationChanges: TLLAtomicChange..., localRevisionNum: Int) throws {
         switch operationType {
-        case .INSERT_NEW_NODE:
+        case .INSERT_OR_DELETE_NODE:
             guard operationChanges.count == 2 || operationChanges.count == 1 else {
                 throw TLLOperationError.invalidNumberOfChangesForOperation
             }
@@ -90,20 +78,6 @@ public struct TLLOperation {
             }
             
             guard operationChanges[0].atomicType == .INSERT_NEW_ENTRY else {
-                throw TLLOperationError.invalidChangesOrOrderForOperation
-            }
-        case .REMOVE_NODE:
-            guard operationChanges.count == 2 || operationChanges.count == 1 else {
-                throw TLLOperationError.invalidNumberOfChangesForOperation
-            }
-            
-            if operationChanges.count == 2 {
-                guard operationChanges[1].atomicType == .ADDITION_ON_ENTRY_NEXT else {
-                    throw TLLOperationError.invalidChangesOrOrderForOperation
-                }
-            }
-            
-            guard operationChanges[0].atomicType == .REMOVE_ENTRY else {
                 throw TLLOperationError.invalidChangesOrOrderForOperation
             }
         case .ADDITION_ON_NODE_VALUE:
@@ -128,14 +102,25 @@ public struct TLLOperation {
 final actor TLLEncryptedDocument {
     private let publicKey: PaillierScheme.PublicKey
     private var textStructure: TableLinkedList<PaillierScheme.EncryptedNumber>
-    private var revisionNum: Int
+    public var revisionNum: Int
     private var operationHistory: [TLLOperation]
+    private let INITIALIZED_NUM_OF_ENTRIES: Int = 10
+    private let zeroedCiphertext: PaillierScheme.EncryptedNumber
+    private let defaultIndexCiphertext: PaillierScheme.EncryptedNumber
+
     
     init(publicKey: PaillierScheme.PublicKey) {
         self.publicKey = publicKey
         self.textStructure = TableLinkedList()
         self.revisionNum = 0
         self.operationHistory = []
+        
+        self.zeroedCiphertext = publicKey.encrypt(plaintext: 0)
+        self.defaultIndexCiphertext = publicKey.encrypt(plaintext: -1)
+        
+        for _ in 0...INITIALIZED_NUM_OF_ENTRIES - 1 {
+            self.textStructure.addEntry(value: self.zeroedCiphertext, nextIndex: self.defaultIndexCiphertext)
+        }
     }
     
     private func transformOperation(operation: TLLOperation) -> TLLOperation {
@@ -171,22 +156,26 @@ final actor TLLEncryptedDocument {
         if transformed.ignore { return }
         
         switch transformed.operationType {
-        case .INSERT_NEW_NODE:
+        case .INSERT_OR_DELETE_NODE:
             if transformed.atomicChanges.count == 2 {
                 try self.textStructure.addToEntryNext(nextIndexAddend: transformed.atomicChanges[1].entryOperand.next!, at: transformed.atomicChanges[1].targetEntryIndex)
             }
-            try self.textStructure.addEntryAt(value: transformed.atomicChanges[0].entryOperand.value!, nextIndex: transformed.atomicChanges[0].entryOperand.next, at: transformed.atomicChanges[0].targetEntryIndex)
-        case .REMOVE_NODE:
-            if transformed.atomicChanges.count == 2 {
-                try self.textStructure.addToEntryNext(nextIndexAddend: transformed.atomicChanges[1].entryOperand.next!, at: transformed.atomicChanges[1].targetEntryIndex)
-            }
-            try self.textStructure.removeEntry(at: transformed.atomicChanges[0].targetEntryIndex)
+            try self.textStructure.addToEntryValue(valueAddend: transformed.atomicChanges[0].entryOperand.value ?? zeroedCiphertext, at: transformed.atomicChanges[0].targetEntryIndex)
+            try self.textStructure.addToEntryNext(nextIndexAddend: transformed.atomicChanges[0].entryOperand.next ?? zeroedCiphertext, at: transformed.atomicChanges[0].targetEntryIndex)
         case .ADDITION_ON_NODE_VALUE:
             try self.textStructure.addToEntryValue(valueAddend: transformed.atomicChanges[0].entryOperand.value!, at: transformed.atomicChanges[0].targetEntryIndex)
         }
         
         self.revisionNum += 1
         self.operationHistory.insert(operation, at: 0)
+    }
+    
+    private func resize() {
+        let targetMagnitude = ((self.textStructure.size / self.INITIALIZED_NUM_OF_ENTRIES) + 1) * 2
+        
+        for _ in 1...(targetMagnitude - self.textStructure.size) {
+            self.textStructure.addEntry(value: self.zeroedCiphertext, nextIndex: self.defaultIndexCiphertext)
+        }
     }
     
     public func getEncryptedValues() -> [(PaillierScheme.EncryptedNumber, PaillierScheme.EncryptedNumber?)?] {

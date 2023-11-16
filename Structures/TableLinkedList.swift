@@ -18,7 +18,6 @@ final private class NodeEntry<T> {
 }
 
 public struct TableLinkedList<T> {
-    let INITIALIZED_NUM_OF_ENTRIES: Int = 10
     private var entries: [NodeEntry<T>?]
     // private var headIndex: T?
     
@@ -27,31 +26,15 @@ public struct TableLinkedList<T> {
     
     public init() {
         self.entries = []
-        
-        for _ in 0...INITIALIZED_NUM_OF_ENTRIES - 1 {
-            addToArrayInOut(nil, array: &self.entries)
-        }
     }
     
-    private mutating func doubleResize() {
-        assert(self.entries.count > 0)
-        for _ in 0...self.entries.count - 1 {
-            addToArrayInOut(nil, array: &self.entries)
-        }
+    public var size: Int {
+        return entries.count
     }
     
     public mutating func addEntry(value: T, nextIndex: T) {
         let newEntry = NodeEntry(value: value, nextIndex: nextIndex)
-        
-        for i in 0...self.entries.count - 1 {
-            if self.entries[i] == nil {
-                self.entries[i] = newEntry
-                return
-            }
-        }
-        
-        self.doubleResize()
-        self.entries[self.entries.count / 2] = newEntry
+        addToArrayInOut(newEntry, array: &self.entries)
     }
     
     public mutating func addEntryAt(value: T, nextIndex: T?, at entryIndex: Int) throws {

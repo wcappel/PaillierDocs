@@ -11,7 +11,7 @@ var document = TLLEncryptedDocument(publicKey: pubKey)
 var testSuite = TLLTestSuite(doc: document, privKey: privKey)
 
 var c1 = pubKey.encrypt(plaintext: "Hello".toIntegerChunkEncoding()[0])
-var o1 = try TLLOperation.buildInsert(at: 0, entry: EntryOperand(value: c1, next: nil), otherNextIndex: 0, otherNextAddend: nil, localRevisionNum: 0)
+var o1 = try TLLOperation.buildInsertOrRemove(at: 0, entry: EntryOperand(value: c1, next: nil), otherNextIndex: 0, otherNextAddend: nil, localRevisionNum: 0)
 await testSuite.perform(operation: o1)
 
 var c2 = pubKey.encrypt(plaintext: "Hello wo".toIntegerChunkEncoding()[0] - "Hello".toIntegerChunkEncoding()[0])
@@ -19,7 +19,7 @@ var o2 = try TLLOperation.buildAddition(at: 0, entryOperand: EntryOperand(value:
 await testSuite.perform(operation: o2)
 
 var c3 = pubKey.encrypt(plaintext: "rld.".toIntegerChunkEncoding()[0])
-var o3 = try TLLOperation.buildInsert(at: 1, entry: EntryOperand(value: c3, next: nil), otherNextIndex: 0, otherNextAddend: pubKey.encrypt(plaintext: 0), localRevisionNum: 2)
+var o3 = try TLLOperation.buildInsertOrRemove(at: 1, entry: EntryOperand(value: c3, next: nil), otherNextIndex: 0, otherNextAddend: pubKey.encrypt(plaintext: 2), localRevisionNum: 2)
 await testSuite.perform(operation: o3)
 
 

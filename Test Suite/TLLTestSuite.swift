@@ -24,9 +24,13 @@ class TLLTestSuite {
     public func perform(operation: TLLOperation, laggingBy: Int = 0) async {
         assert(laggingBy >= 0)
         do {
-            try await encryptedDoc.handleOperation(operation: operation)
+            var copiedOperation = operation
+            if laggingBy > 0 {
+                copiedOperation.localRevisionNum = await encryptedDoc.revisionNum - laggingBy
+            }
+            try await encryptedDoc.handleOperation(operation: copiedOperation)
             self.localRevisionNum += 1
-            knownHistory.append(operation)
+            knownHistory.append(copiedOperation)
             try await self.showDocument()
         } catch {
             print(error)
@@ -37,8 +41,12 @@ class TLLTestSuite {
         let decrypted = try await decryptTLLDocument(doc: self.encryptedDoc, privateKey: self.privKey)
         var strResult = ""
         for d in decrypted {
-            if let d {
-                strResult += "\t[\(String(bytes: d.0.fromSingleChunkEncoding(), encoding: .utf8)!), \(d.1)]\n"
+            if let d, d.0 != 0 {
+                let nextIndex = d.1 == -1 ? "X" : (d.1?.string(base: 10) ?? "NIL")
+                strResult += "\t[\(String(bytes: d.0.fromSingleChunkEncoding(), encoding: .utf8)!), \(nextIndex)]\n"
+            } else if let d, d.0 == 0 {
+                let nextIndex = d.1 == -1 ? "X" : (d.1?.string(base: 10) ?? "NIL")
+                strResult += "\t[\\0, \(nextIndex)]\n"
             } else {
                 strResult += "\tNULL\n"
             }
