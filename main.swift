@@ -23,6 +23,9 @@ var o3 = try TLLOperation.buildInsertOrRemove(at: 1, entry: EntryOperand(value: 
 await testSuite.perform(operation: o3)
 
 
+await testSuite.showHistory()
+
+
 //var document = SLLEncryptedDocument(publicKey: pubKey)
 //
 //var c1 = pubKey.encrypt(plaintext:"Paillier".toIntegerChunkEncoding()[0])

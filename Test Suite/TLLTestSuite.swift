@@ -57,29 +57,66 @@ class TLLTestSuite {
     }
     
     public func showHistory() {
-        print(self.knownHistory)
+        var strResult = ""
+        for (i, h) in self.knownHistory.enumerated() {
+            strResult += "\(i): \(h.operationType) — at \(h.atomicChanges[0].targetEntryIndex)"
+            if h.atomicChanges.count == 2 {
+                strResult += ", at \(h.atomicChanges[1].targetEntryIndex)"
+            }
+            strResult += "\n"
+        }
+        
+        print(strResult)
+    }
+    
+    public func trackHistoryAttempt() {
+        var absolutePositionEstimateRangeForHistoryItems: [Int : (Int, Int)] = [:]
+        var mimicLinkedListsForHistoryItems: [[SinglyLinkedList<Int>]] = [[]]
+        
+        for (i, h): (Int, TLLOperation) in self.knownHistory.enumerated() {
+            if i == 0 {
+                var startingMimic = SinglyLinkedList<Int>()
+                startingMimic.append(0)
+                absolutePositionEstimateRangeForHistoryItems[0] = (0, 0)
+                mimicLinkedListsForHistoryItems.append([startingMimic])
+                continue // Assume first operation is add
+            }
+            
+            let previousHistoryItemMimics = mimicLinkedListsForHistoryItems.last!
+            
+            switch h.operationType {
+            case .INSERT_OR_DELETE_NODE:
+                <#code#>
+            case .ADDITION_ON_NODE_VALUE:
+                var positionGuesses: Set<Int> = Set<Int>()
+                for m in previousHistoryItemMimics {
+                    let mimicEstimatePositions: [Int] = m.getIndicesOfValue(value: h.atomicChanges[0].targetEntryIndex)
+                    if mimicEstimatePositions.count != 0 {
+                        positionGuesses.insert(mimicEstimatePositions.min()!)
+                        positionGuesses.insert(mimicEstimatePositions.max()!)
+                    }
+                }
+                
+                absolutePositionEstimateRangeForHistoryItems[i] = (positionGuesses.min() ?? -1, positionGuesses.max() ?? -1)
+            }
+        }
+        
+        /*
+            ADD - 3 operations: addition on prev entry's next value, addition on new entry's c value, and addition on new entry's next value
+                - Edge case of adding first node: No prev entry next value additon
+            REMOVE - 3 operations: addition on prev entry's next value, addition on removed entry's c value, addition on removed entry's next value
+                - Edge case of removing first node: No prev entry next value addition
+            EDIT - 1 operation: addition on entry's c value; can always be masked as an ADD/REMOVE
+         
+            The only thing that can distinguish a remove from an add is if the server knows the changed next value for the previous entry was on a previously added node
+            The only thing that can distinguish a add from a remove is if the server knows that the newly added entry has never been touched, or was previously removed
+            The first operation can always assumed to be an add (unless it's fake)
+         */
     }
     
     func decryptTLLDocument(doc: TLLEncryptedDocument, privateKey: PaillierScheme.PrivateKey) async throws -> [(BigInt, BigInt?)?] {
         var result: [(BigInt, BigInt?)?] = []
         let encValues = await doc.getEncryptedValues()
-        
-//        guard headIndex != nil else {
-//            throw TLLTestSuiteError.noHeadIndex
-//        }
-//
-//        var subsequent: BigInt? = try privateKey.decrypt(encryptedNumber: headIndex!)
-//        while let currNext = subsequent {
-//            let asInt: Int = Int(currNext.string())!
-//            let entry = encValues[asInt]
-//
-//            if let entry {
-//                result.append(try privateKey.decrypt(encryptedNumber: entry.0))
-//                subsequent = entry.1 != nil ? try privateKey.decrypt(encryptedNumber: entry.1!) : nil
-//            } else {
-//                break
-//            }
-//        }
         
         for e in encValues {
             if let e {

@@ -203,6 +203,20 @@ public struct SinglyLinkedList<T> {
         throw LinkedListError.IndexOutOfRange
     }
     
+    public func clone() -> Self {
+        var cloned: Self = SinglyLinkedList()
+        
+        if var currNode = self.head {
+            cloned.append(currNode.value)
+            while currNode.next != nil {
+                cloned.append(currNode.next!.value)
+                currNode = currNode.next!
+            }
+        }
+        
+        return cloned
+    }
+    
     public func describe() {
         var str = ""
         if var currNode = self.head {
@@ -244,6 +258,29 @@ extension SinglyLinkedList where T: DefinedAdditiveOperation {
         
         nodeAtIndex.value = try nodeAtIndex.value + addend
         return nodeAtIndex.value
+    }
+}
+
+extension SinglyLinkedList where T: Equatable {
+    public func getIndicesOfValue(value: T) -> [Int] {
+        var result: [Int] = []
+        if var currNode = self.head {
+            var currIndex = 0
+
+            while currNode.next != nil {
+                if currNode.value == value {
+                    result.append(currIndex)
+                }
+                currNode = currNode.next!
+                currIndex += 1
+            }
+            
+            if currNode.value == value {
+                result.append(currIndex)
+            }
+        }
+        
+        return result
     }
 }
 

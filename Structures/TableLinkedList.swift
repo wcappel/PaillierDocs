@@ -19,10 +19,6 @@ final private class NodeEntry<T> {
 
 public struct TableLinkedList<T> {
     private var entries: [NodeEntry<T>?]
-    // private var headIndex: T?
-    
-    // How will a user know where the head is?
-    // Could we just use a property to track it?
     
     public init() {
         self.entries = []
@@ -51,10 +47,6 @@ public struct TableLinkedList<T> {
         self.entries[entryIndex] = newEntry
     }
     
-//    public mutating func changeHeadIndex(newHeadIndex: T) {
-//        self.headIndex = newHeadIndex
-//    }
-    
     public mutating func removeEntry(at entryIndex: Int) throws {
         guard entryIndex < self.entries.count else {
             throw LinkedListError.IndexOutOfRange
@@ -72,10 +64,6 @@ public struct TableLinkedList<T> {
             return nil
         }
     }
-    
-//    public func getEncryptedHeadIndex() -> T? {
-//        return self.headIndex
-//    }
 }
 
 extension TableLinkedList where T: DefinedAdditiveOperation {

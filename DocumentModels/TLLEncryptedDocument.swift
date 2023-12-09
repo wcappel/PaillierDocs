@@ -13,7 +13,6 @@ public enum TLLAtomicType {
     case ADDITION_ON_ENTRY_VALUE
     case ADDITION_ON_ENTRY_NEXT
     case REMOVE_ENTRY
-    // case CHANGE_HEAD_INDEX
 }
 
 public enum TLLOperationType {
@@ -180,7 +179,6 @@ final actor TLLEncryptedDocument {
     
     public func getEncryptedValues() -> [(PaillierScheme.EncryptedNumber, PaillierScheme.EncryptedNumber?)?] {
         let values: [(PaillierScheme.EncryptedNumber, PaillierScheme.EncryptedNumber?)?] = self.textStructure.asTuples()
-        // let headIndex: PaillierScheme.EncryptedNumber? = self.textStructure.getEncryptedHeadIndex()
         
         return values
     }
