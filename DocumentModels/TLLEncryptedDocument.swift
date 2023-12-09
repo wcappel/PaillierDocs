@@ -103,7 +103,7 @@ final actor TLLEncryptedDocument {
     private var textStructure: TableLinkedList<PaillierScheme.EncryptedNumber>
     public var revisionNum: Int
     private var operationHistory: [TLLOperation]
-    private let INITIALIZED_NUM_OF_ENTRIES: Int = 10
+    public static let INITIALIZED_NUM_OF_ENTRIES: Int = 50
     private let zeroedCiphertext: PaillierScheme.EncryptedNumber
     private let defaultIndexCiphertext: PaillierScheme.EncryptedNumber
 
@@ -117,7 +117,7 @@ final actor TLLEncryptedDocument {
         self.zeroedCiphertext = publicKey.encrypt(plaintext: 0)
         self.defaultIndexCiphertext = publicKey.encrypt(plaintext: -1)
         
-        for _ in 0...INITIALIZED_NUM_OF_ENTRIES - 1 {
+        for _ in 0...Self.INITIALIZED_NUM_OF_ENTRIES - 1 {
             self.textStructure.addEntry(value: self.zeroedCiphertext, nextIndex: self.defaultIndexCiphertext)
         }
     }
@@ -170,7 +170,7 @@ final actor TLLEncryptedDocument {
     }
     
     private func resize() {
-        let targetMagnitude = ((self.textStructure.size / self.INITIALIZED_NUM_OF_ENTRIES) + 1) * 2
+        let targetMagnitude = ((self.textStructure.size / Self.INITIALIZED_NUM_OF_ENTRIES) + 1) * 2
         
         for _ in 1...(targetMagnitude - self.textStructure.size) {
             self.textStructure.addEntry(value: self.zeroedCiphertext, nextIndex: self.defaultIndexCiphertext)

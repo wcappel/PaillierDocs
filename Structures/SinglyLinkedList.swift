@@ -58,6 +58,7 @@ public struct SinglyLinkedList<T> {
             self.size += 1
         }
         
+        newNode.next = self.head
         self.head = newNode
         if tail == nil {
             self.tail = newNode
@@ -281,6 +282,33 @@ extension SinglyLinkedList where T: Equatable {
         }
         
         return result
+    }
+    
+    public mutating func removeFirstInstanceOfValue(value: T) -> Bool {
+        if var currNode = self.head {
+            var currIndex = 0
+            var removeIndex: Int? = nil
+
+            if currNode.value == value {
+                removeIndex = 0
+            } else {
+                while currNode.next != nil {
+                    if currNode.value == value {
+                        removeIndex = currIndex
+                        break
+                    }
+                    currNode = currNode.next!
+                    currIndex += 1
+                }
+            }
+            
+            if let removeIndex {
+                try! self.removeAt(index: removeIndex)
+                return true
+            }
+        }
+
+        return false
     }
 }
 

@@ -6,44 +6,54 @@ import Bignum
 print("Started")
 
 let (pubKey, privKey) = try PaillierScheme.generatePaillierKeypair()
+let clock = ContinuousClock()
+
+print("------------------- BENCHMARKING -------------------")
+print("Benchmarking - Encryption")
+var encTimes: [Duration] = []
+for _ in 1...100 {
+    let elapsed = clock.measure {
+        pubKey.encrypt(plaintext: BigInt.randomInt(bits: 64))
+    }
+
+    encTimes.append(elapsed)
+}
+var encResultSum: Duration = .seconds(0)
+print("\tRESULTS: \(encTimes.reduce(encResultSum, +) / encTimes.count) on average")
+
+print("Benchmarking - Decryption")
+var decTimes: [Duration] = []
+for _ in 1...100 {
+    let c = pubKey.encrypt(plaintext: BigInt.randomInt(bits: 64))
+    let elapsed = clock.measure {
+        try? privKey.decrypt(encryptedNumber: c)
+    }
+
+    decTimes.append(elapsed)
+}
+var decResultSum: Duration = .seconds(0)
+print("\tRESULTS: \(decTimes.reduce(decResultSum, +) / decTimes.count) on average")
+
+print("Benchmarking - Homomorphic Addition")
+var addTimes: [Duration] = []
+for _ in 1...100 {
+    let c1 = pubKey.encrypt(plaintext: BigInt.randomInt(bits: 31))
+    let c2 = pubKey.encrypt(plaintext: BigInt.randomInt(bits: 31))
+    let elapsed = clock.measure {
+        try? c1 + c2
+    }
+
+    addTimes.append(elapsed)
+}
+var addResultSum: Duration = .seconds(0)
+print("\tRESULTS: \(addTimes.reduce(addResultSum, +) / addTimes.count) on average")
+
+print("-------------------- TEST SUITE --------------------")
 
 var document = TLLEncryptedDocument(publicKey: pubKey)
 var testSuite = TLLTestSuite(doc: document, privKey: privKey)
 
-var c1 = pubKey.encrypt(plaintext: "Hello".toIntegerChunkEncoding()[0])
-var o1 = try TLLOperation.buildInsertOrRemove(at: 0, entry: EntryOperand(value: c1, next: nil), otherNextIndex: 0, otherNextAddend: nil, localRevisionNum: 0)
-await testSuite.perform(operation: o1)
-
-var c2 = pubKey.encrypt(plaintext: "Hello wo".toIntegerChunkEncoding()[0] - "Hello".toIntegerChunkEncoding()[0])
-var o2 = try TLLOperation.buildAddition(at: 0, entryOperand: EntryOperand(value: c2, next: nil), localRevisionNum: 1)
-await testSuite.perform(operation: o2)
-
-var c3 = pubKey.encrypt(plaintext: "rld.".toIntegerChunkEncoding()[0])
-var o3 = try TLLOperation.buildInsertOrRemove(at: 1, entry: EntryOperand(value: c3, next: nil), otherNextIndex: 0, otherNextAddend: pubKey.encrypt(plaintext: 2), localRevisionNum: 2)
-await testSuite.perform(operation: o3)
-
-
-await testSuite.showHistory()
-
-
-//var document = SLLEncryptedDocument(publicKey: pubKey)
-//
-//var c1 = pubKey.encrypt(plaintext:"Paillier".toIntegerChunkEncoding()[0])
-//c1.obfuscate()
-//let o1 = SLLOperation(operationType: .INSERT_NEW_NODE, targetIndex: 0, localRevisionNum: 0, encryptedOperand: c1)
-//try await document.handleOperation(operation: o1)
-//print("O1: \((try await decryptSLLDocument(doc: document, privateKey: privKey)).fromIntegerChunkEncoding())")
-//
-//var c2a = pubKey.encrypt(plaintext: "Paulluer".toIntegerChunkEncoding()[0] - "Paillier".toIntegerChunkEncoding()[0])
-//c2a.obfuscate()
-//let o2a = SLLOperation(operationType: .ADDITION_ON_NODE_VALUE, targetIndex: 0, localRevisionNum: 1, encryptedOperand: c2a)
-//var c2b = pubKey.encrypt(plaintext: "Railliex".toIntegerChunkEncoding()[0] - "Paillier".toIntegerChunkEncoding()[0])
-//c2b.obfuscate()
-//let o2b = SLLOperation(operationType: .ADDITION_ON_NODE_VALUE, targetIndex: 0, localRevisionNum: 1, encryptedOperand: c2b)
-//try await document.handleOperation(operation: o2a)
-//print("O2a: \((try await decryptSLLDocument(doc: document, privateKey: privKey)).fromIntegerChunkEncoding())")
-//try await document.handleOperation(operation: o2b)
-//print("O2b: \((try await decryptSLLDocument(doc: document, privateKey: privKey)).fromIntegerChunkEncoding())")
+await testSuite.scenario_straightAppendsWithEdits(fakeOperations: true)
 
 print("Done")
 

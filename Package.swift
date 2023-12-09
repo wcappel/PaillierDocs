@@ -7,7 +7,7 @@ let name = "PaillierDocsProject"
 let package = Package(
     name: name,
     platforms: [
-        .macOS(.v12),
+        .macOS(.v13),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-collections.git", from: "1.0.0"),
